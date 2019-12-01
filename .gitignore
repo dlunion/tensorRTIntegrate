@@ -1,0 +1,6 @@
+*.trtmodel
+/build
+/.vs
+*.pdb
+*.exe
+*.ilk
