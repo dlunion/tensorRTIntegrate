@@ -18,7 +18,7 @@ namespace ccutil{
 
 #define ORG_Center			-1000000
 #define Assert(op)		ccutil::__assert_func((op), __FILE__, __LINE__, __FUNCTION__, #op)
-#define INFO(fmt, ...)	ccutil::__log_func(__FILE__, __LINE__, __FUNCTION__, fmt, __VA_ARGS__)
+#define INFO(...)	ccutil::__log_func(__FILE__, __LINE__, __FUNCTION__, __VA_ARGS__)
 
 	using std::string;
 	using std::vector;
@@ -170,7 +170,7 @@ namespace ccutil{
 	bool saveList(const string& file, const vector<string>& list);
 
 	//name,label,x,y,r,b
-	//Ó³Éä³öÀ´½á¹ûÊÇkey = name, value = label,x,y,r,b
+	//æ˜ å°„å‡ºæ¥ç»“æœæ˜¯key = name, value = label,x,y,r,b
 	map<string, string> loadListMap(const string& listfile);
 	cv::Mat loadMatrix(FILE* file);
 	bool saveMatrix(FILE* file, const cv::Mat& m);
@@ -258,16 +258,16 @@ namespace ccutil{
 
 	void setRandomSeed(int seed);
 
-	//¸¡µãÊı·µ»ØµÄ²»°üº¬high£¬[low, high)
+	//æµ®ç‚¹æ•°è¿”å›çš„ä¸åŒ…å«highï¼Œ[low, high)
 	float randrf(float low, float high);
 	cv::Rect randbox(cv::Size size, cv::Size limit);
 
-	//ÕûÊı·µ»ØµÄ£¬°üº¬high£¬[low, high]
+	//æ•´æ•°è¿”å›çš„ï¼ŒåŒ…å«highï¼Œ[low, high]
 	int randr(int low, int high);
 	int randr(int high);
 	int randr_exclude(int mi, int mx, int exclude);
 
-	//·µ»ØµÄ²»°üº¬end£¬[low, end)
+	//è¿”å›çš„ä¸åŒ…å«endï¼Œ[low, end)
 	vector<int> seque(int begin, int end);
 	vector<int> seque(int end);
 	vector<int> shuffleSeque(int begin, int end);
@@ -317,7 +317,7 @@ namespace ccutil{
 		return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2));
 	}
 
-	//·µ»Ø32Î»µÄ´óĞ´×ÖÄ¸µÄuuid
+	//è¿”å›32ä½çš„å¤§å†™å­—æ¯çš„uuid
 	string uuid();
 
 	class BinIO{
@@ -402,7 +402,7 @@ namespace ccutil{
 	class FileCache{
 
 	public:
-		//Îª0Ê±£¬²»cache£¬Îª-1Ê±£¬ËùÓĞ¶¼cache
+		//ä¸º0æ—¶ï¼Œä¸cacheï¼Œä¸º-1æ—¶ï¼Œæ‰€æœ‰éƒ½cache
 		FileCache(int maxCacheSize = -1);
 		string loadfile(const string& file);
 		vector<BBox> loadxml(const string& file, int* width, int* height, const string& filter);
