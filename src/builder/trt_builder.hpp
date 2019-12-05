@@ -10,6 +10,7 @@
 
 namespace TRTBuilder {
 
+	//INT8模式下的自定义预处理函数
 	typedef std::function<void(int current, int count, cv::Mat& inputOutput)> Int8Process;
 
 	//cudaSetDevice的封装，避免包含cuda头文件
@@ -43,15 +44,23 @@ namespace TRTBuilder {
 		TRTMode_INT8
 	};
 
+	//把模式转换为字符串FP32、FP16、INT8
 	const char* modeString(TRTMode type);
 
+
+	//当处于INT8模式时，int8process必须制定
+	//     int8ImageDirectory和int8EntropyCalibratorFile指定一个即可
+	//     如果初次生成，指定了int8EntropyCalibratorFile，calibrator会保存到int8EntropyCalibratorFile指定的文件
+	//     如果已经生成过，指定了int8EntropyCalibratorFile，calibrator会从int8EntropyCalibratorFile指定的文件加载，而不是
+	//          从int8ImageDirectory读取图片再重新生成
+	//当处于FP32或者FP16时，int8process、int8ImageDirectory、int8EntropyCalibratorFile都不需要指定
 	bool compileTRT(
 		TRTMode mode,
 		const std::vector<std::string>& outputs,
 		unsigned int maxBatchSize,
 		const ModelSource& source,
 		const std::string& savepath,
-		Int8Process int8process = nullptr,						//如果是int8，则三个参数需要设置
+		Int8Process int8process = nullptr,					
 		const std::string& int8ImageDirectory = "",
 		const std::string& int8EntropyCalibratorFile = "");
 };
