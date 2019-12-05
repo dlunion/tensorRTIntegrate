@@ -1,0 +1,164 @@
+[2019-12-05 17:34:27:main.cpp(21):testInt8Caffe]:Int8 量化
+[2019-12-05 17:34:27:trt_builder.cpp(200):TRTBuilder::compileTRT]:Build INT8 trtmodel.
+[2019-12-05 17:34:27:trt_builder.cpp(239):TRTBuilder::compileTRT]:Can not find any images(jpg/png/bmp/jpeg/tiff) from directory: models/int8data
+[2019-12-05 17:34:27:main.cpp(31):testInt8Caffe]:Int8 Done
+[2019-12-05 17:34:27:main.cpp(38):testOnnxFP32]:onnx to trtmodel...
+[2019-12-05 17:34:27:trt_builder.cpp(200):TRTBuilder::compileTRT]:Build FP32 trtmodel.
+[2019-12-05 17:34:29:trt_builder.cpp(325):TRTBuilder::compileTRT]:Warning: ONNX has not pluginFactory support
+[2019-12-05 17:34:30:trt_builder.cpp(353):TRTBuilder::compileTRT]:Set max batch size: 4.
+[2019-12-05 17:34:30:trt_builder.cpp(374):TRTBuilder::compileTRT]:Build engine
+[2019-12-05 17:38:56:main.cpp(21):testInt8Caffe]:Int8 量化
+[2019-12-05 17:38:56:trt_builder.cpp(200):TRTBuilder::compileTRT]:Build INT8 trtmodel.
+[2019-12-05 17:38:56:trt_builder.cpp(239):TRTBuilder::compileTRT]:Can not find any images(jpg/png/bmp/jpeg/tiff) from directory: models/int8data
+[2019-12-05 17:38:56:main.cpp(31):testInt8Caffe]:Int8 Done
+[2019-12-05 17:38:56:main.cpp(38):testOnnxFP32]:onnx to trtmodel...
+[2019-12-05 17:38:56:trt_builder.cpp(200):TRTBuilder::compileTRT]:Build FP32 trtmodel.
+[2019-12-05 17:38:56:trt_builder.cpp(325):TRTBuilder::compileTRT]:Warning: ONNX has not pluginFactory support
+[2019-12-05 17:38:56:trt_builder.cpp(353):TRTBuilder::compileTRT]:Set max batch size: 4.
+[2019-12-05 17:38:56:trt_builder.cpp(374):TRTBuilder::compileTRT]:Build engine
+[2019-12-05 17:39:29:main.cpp(21):testInt8Caffe]:Int8 量化
+[2019-12-05 17:39:29:trt_builder.cpp(200):TRTBuilder::compileTRT]:Build INT8 trtmodel.
+[2019-12-05 17:39:29:trt_builder.cpp(297):TRTBuilder::compileTRT]:Using plugin factory for build phase.
+[2019-12-05 17:39:30:trt_builder.cpp(315):TRTBuilder::compileTRT]:Marked output blob 'fc_blob1'.
+[2019-12-05 17:39:30:trt_builder.cpp(353):TRTBuilder::compileTRT]:Set max batch size: 4.
+[2019-12-05 17:39:30:trt_builder.cpp(366):TRTBuilder::compileTRT]:Using image list[15 files]: models/int8data
+[2019-12-05 17:39:30:trt_builder.cpp(374):TRTBuilder::compileTRT]:Build engine
+[2019-12-05 17:39:34:main.cpp(17):testInt8Caffe::<...perator ()]:process: 1 / 15
+[2019-12-05 17:39:34:main.cpp(17):testInt8Caffe::<...perator ()]:process: 2 / 15
+[2019-12-05 17:39:34:main.cpp(17):testInt8Caffe::<...perator ()]:process: 3 / 15
+[2019-12-05 17:39:34:main.cpp(17):testInt8Caffe::<...perator ()]:process: 4 / 15
+[2019-12-05 17:39:34:main.cpp(17):testInt8Caffe::<...perator ()]:process: 5 / 15
+[2019-12-05 17:39:34:main.cpp(17):testInt8Caffe::<...perator ()]:process: 6 / 15
+[2019-12-05 17:39:34:main.cpp(17):testInt8Caffe::<...perator ()]:process: 7 / 15
+[2019-12-05 17:39:34:main.cpp(17):testInt8Caffe::<...perator ()]:process: 8 / 15
+[2019-12-05 17:39:34:main.cpp(17):testInt8Caffe::<...perator ()]:process: 9 / 15
+[2019-12-05 17:39:34:main.cpp(17):testInt8Caffe::<...perator ()]:process: 10 / 15
+[2019-12-05 17:39:34:main.cpp(17):testInt8Caffe::<...perator ()]:process: 11 / 15
+[2019-12-05 17:39:34:main.cpp(17):testInt8Caffe::<...perator ()]:process: 12 / 15
+[2019-12-05 17:39:34:main.cpp(17):testInt8Caffe::<...perator ()]:process: 13 / 15
+[2019-12-05 17:39:34:main.cpp(17):testInt8Caffe::<...perator ()]:process: 14 / 15
+[2019-12-05 17:39:34:main.cpp(17):testInt8Caffe::<...perator ()]:process: 15 / 15
+[2019-12-05 17:39:50:trt_builder.cpp(389):TRTBuilder::compileTRT]:Save calibrator to: models/handmodel_resnet18.calibrator.txt
+[2019-12-05 17:39:51:main.cpp(31):testInt8Caffe]:Int8 Done
+[2019-12-05 17:39:51:main.cpp(38):testOnnxFP32]:onnx to trtmodel...
+[2019-12-05 17:39:51:trt_builder.cpp(200):TRTBuilder::compileTRT]:Build FP32 trtmodel.
+[2019-12-05 17:39:51:trt_builder.cpp(325):TRTBuilder::compileTRT]:Warning: ONNX has not pluginFactory support
+[2019-12-05 17:39:51:trt_builder.cpp(353):TRTBuilder::compileTRT]:Set max batch size: 4.
+[2019-12-05 17:39:51:trt_builder.cpp(374):TRTBuilder::compileTRT]:Build engine
+[2019-12-05 17:40:19:main.cpp(44):testOnnxFP32]:done.
+[2019-12-05 17:40:19:main.cpp(46):testOnnxFP32]:load model: models/efficientnet-b0.fp32.trtmodel
+[2019-12-05 17:40:19:main.cpp(53):testOnnxFP32]:forward...
+[2019-12-05 17:40:19:main.cpp(76):testOnnxFP32]:top 0: 88.42 %, giant panda, panda, panda bear, coon bear, Ailuropoda melanoleuca
+[2019-12-05 17:40:19:main.cpp(76):testOnnxFP32]:top 1: 0.47 %, lesser panda, red panda, panda, bear cat, cat bear, Ailurus fulgens
+[2019-12-05 17:40:19:main.cpp(76):testOnnxFP32]:top 2: 0.46 %, brown bear, bruin, Ursus arctos
+[2019-12-05 17:40:19:main.cpp(76):testOnnxFP32]:top 3: 0.17 %, American black bear, black bear, Ursus americanus, Euarctos americanus
+[2019-12-05 17:40:19:main.cpp(76):testOnnxFP32]:top 4: 0.15 %, sloth bear, Melursus ursinus, Ursus ursinus
+[2019-12-05 17:40:19:main.cpp(79):testOnnxFP32]:done.
+[2019-12-05 17:40:19:main.cpp(85):testPlugin]:FP32 量化
+[2019-12-05 17:40:19:trt_builder.cpp(200):TRTBuilder::compileTRT]:Build FP32 trtmodel.
+[2019-12-05 17:40:19:trt_builder.cpp(325):TRTBuilder::compileTRT]:Warning: ONNX has not pluginFactory support
+[2019-12-05 17:41:30:main.cpp(21):testInt8Caffe]:Int8 量化
+[2019-12-05 17:41:30:trt_builder.cpp(200):TRTBuilder::compileTRT]:Build INT8 trtmodel.
+[2019-12-05 17:41:30:trt_builder.cpp(226):TRTBuilder::compileTRT]:imageDirectory is ignore, when entropyCalibratorFile is set
+[2019-12-05 17:41:30:trt_builder.cpp(297):TRTBuilder::compileTRT]:Using plugin factory for build phase.
+[2019-12-05 17:41:30:trt_builder.cpp(315):TRTBuilder::compileTRT]:Marked output blob 'fc_blob1'.
+[2019-12-05 17:41:30:trt_builder.cpp(353):TRTBuilder::compileTRT]:Set max batch size: 4.
+[2019-12-05 17:41:30:trt_builder.cpp(360):TRTBuilder::compileTRT]:Using exist entropy calibrator data[536 bytes]: models/handmodel_resnet18.calibrator.txt
+[2019-12-05 17:41:30:trt_builder.cpp(374):TRTBuilder::compileTRT]:Build engine
+[2019-12-05 17:41:47:main.cpp(31):testInt8Caffe]:Int8 Done
+[2019-12-05 17:41:47:main.cpp(38):testOnnxFP32]:onnx to trtmodel...
+[2019-12-05 17:41:47:trt_builder.cpp(200):TRTBuilder::compileTRT]:Build FP32 trtmodel.
+[2019-12-05 17:41:47:trt_builder.cpp(325):TRTBuilder::compileTRT]:Warning: ONNX has not pluginFactory support
+[2019-12-05 17:41:47:trt_builder.cpp(353):TRTBuilder::compileTRT]:Set max batch size: 4.
+[2019-12-05 17:41:47:trt_builder.cpp(374):TRTBuilder::compileTRT]:Build engine
+[2019-12-05 17:42:15:main.cpp(44):testOnnxFP32]:done.
+[2019-12-05 17:42:15:main.cpp(46):testOnnxFP32]:load model: models/efficientnet-b0.fp32.trtmodel
+[2019-12-05 17:42:16:main.cpp(53):testOnnxFP32]:forward...
+[2019-12-05 17:42:16:main.cpp(76):testOnnxFP32]:top 0: 88.42 %, giant panda, panda, panda bear, coon bear, Ailuropoda melanoleuca
+[2019-12-05 17:42:16:main.cpp(76):testOnnxFP32]:top 1: 0.47 %, lesser panda, red panda, panda, bear cat, cat bear, Ailurus fulgens
+[2019-12-05 17:42:16:main.cpp(76):testOnnxFP32]:top 2: 0.46 %, brown bear, bruin, Ursus arctos
+[2019-12-05 17:42:16:main.cpp(76):testOnnxFP32]:top 3: 0.17 %, American black bear, black bear, Ursus americanus, Euarctos americanus
+[2019-12-05 17:42:16:main.cpp(76):testOnnxFP32]:top 4: 0.15 %, sloth bear, Melursus ursinus, Ursus ursinus
+[2019-12-05 17:42:16:main.cpp(79):testOnnxFP32]:done.
+[2019-12-05 17:42:16:main.cpp(85):testPlugin]:FP32 量化
+[2019-12-05 17:42:16:trt_builder.cpp(200):TRTBuilder::compileTRT]:Build FP32 trtmodel.
+[2019-12-05 17:42:16:trt_builder.cpp(297):TRTBuilder::compileTRT]:Using plugin factory for build phase.
+[2019-12-05 17:42:16:plugin.cpp(239):Plugin::Manager::builderCreate]:builderCreate WReLU1123
+[2019-12-05 17:42:16:trt_builder.cpp(315):TRTBuilder::compileTRT]:Marked output blob 'myImage'.
+[2019-12-05 17:42:16:trt_builder.cpp(353):TRTBuilder::compileTRT]:Set max batch size: 4.
+[2019-12-05 17:42:16:trt_builder.cpp(374):TRTBuilder::compileTRT]:Build engine
+[2019-12-05 17:42:16:main.cpp(90):testPlugin]:FP32 Done
+[2019-12-05 17:42:16:main.cpp(92):testPlugin]:加载模型 models/demo.fp32.trtmodel
+[2019-12-05 17:42:16:plugin.cpp(247):Plugin::Manager::inferCreate]:inferCreate WReLU1123
+[2019-12-05 17:42:16:main.cpp(100):testPlugin]:Inference ...
+[2019-12-05 17:42:16:main.cpp(104):testPlugin]:done
+[2019-12-05 17:43:54:main.cpp(21):testInt8Caffe]:Int8 量化
+[2019-12-05 17:43:54:trt_builder.cpp(200):TRTBuilder::compileTRT]:Build INT8 trtmodel.
+[2019-12-05 17:43:54:trt_builder.cpp(226):TRTBuilder::compileTRT]:imageDirectory is ignore, when entropyCalibratorFile is set
+[2019-12-05 17:43:55:trt_builder.cpp(297):TRTBuilder::compileTRT]:Using plugin factory for build phase.
+[2019-12-05 17:43:55:trt_builder.cpp(315):TRTBuilder::compileTRT]:Marked output blob 'fc_blob1'.
+[2019-12-05 17:43:55:trt_builder.cpp(353):TRTBuilder::compileTRT]:Set max batch size: 4.
+[2019-12-05 17:43:55:trt_builder.cpp(360):TRTBuilder::compileTRT]:Using exist entropy calibrator data[536 bytes]: models/handmodel_resnet18.calibrator.txt
+[2019-12-05 17:43:55:trt_builder.cpp(374):TRTBuilder::compileTRT]:Build engine
+[2019-12-05 17:44:12:main.cpp(31):testInt8Caffe]:Int8 Done
+[2019-12-05 17:44:12:main.cpp(38):testOnnxFP32]:onnx to trtmodel...
+[2019-12-05 17:44:12:trt_builder.cpp(200):TRTBuilder::compileTRT]:Build FP32 trtmodel.
+[2019-12-05 17:44:12:trt_builder.cpp(325):TRTBuilder::compileTRT]:Warning: ONNX has not pluginFactory support
+[2019-12-05 17:44:12:trt_builder.cpp(353):TRTBuilder::compileTRT]:Set max batch size: 4.
+[2019-12-05 17:44:12:trt_builder.cpp(374):TRTBuilder::compileTRT]:Build engine
+[2019-12-05 17:44:40:main.cpp(44):testOnnxFP32]:done.
+[2019-12-05 17:44:40:main.cpp(46):testOnnxFP32]:load model: models/efficientnet-b0.fp32.trtmodel
+[2019-12-05 17:44:40:main.cpp(53):testOnnxFP32]:forward...
+[2019-12-05 17:44:40:main.cpp(76):testOnnxFP32]:top 0: 88.42 %, giant panda, panda, panda bear, coon bear, Ailuropoda melanoleuca
+[2019-12-05 17:44:40:main.cpp(76):testOnnxFP32]:top 1: 0.47 %, lesser panda, red panda, panda, bear cat, cat bear, Ailurus fulgens
+[2019-12-05 17:44:40:main.cpp(76):testOnnxFP32]:top 2: 0.46 %, brown bear, bruin, Ursus arctos
+[2019-12-05 17:44:40:main.cpp(76):testOnnxFP32]:top 3: 0.17 %, American black bear, black bear, Ursus americanus, Euarctos americanus
+[2019-12-05 17:44:40:main.cpp(76):testOnnxFP32]:top 4: 0.15 %, sloth bear, Melursus ursinus, Ursus ursinus
+[2019-12-05 17:44:40:main.cpp(79):testOnnxFP32]:done.
+[2019-12-05 17:44:40:main.cpp(85):testPlugin]:Plugin FP32 转换
+[2019-12-05 17:44:40:trt_builder.cpp(200):TRTBuilder::compileTRT]:Build FP32 trtmodel.
+[2019-12-05 17:44:40:trt_builder.cpp(297):TRTBuilder::compileTRT]:Using plugin factory for build phase.
+[2019-12-05 17:44:41:plugin.cpp(239):Plugin::Manager::builderCreate]:builderCreate WReLU1123
+[2019-12-05 17:44:41:trt_builder.cpp(315):TRTBuilder::compileTRT]:Marked output blob 'myImage'.
+[2019-12-05 17:44:41:trt_builder.cpp(353):TRTBuilder::compileTRT]:Set max batch size: 4.
+[2019-12-05 17:44:41:trt_builder.cpp(374):TRTBuilder::compileTRT]:Build engine
+[2019-12-05 17:44:41:main.cpp(90):testPlugin]:Plugin FP32 Done
+[2019-12-05 17:44:41:main.cpp(92):testPlugin]:加载模型 models/demo.fp32.trtmodel
+[2019-12-05 17:44:41:plugin.cpp(247):Plugin::Manager::inferCreate]:inferCreate WReLU1123
+[2019-12-05 17:44:41:main.cpp(100):testPlugin]:Inference ...
+[2019-12-05 17:44:41:main.cpp(104):testPlugin]:done
+[2019-12-05 17:45:22:main.cpp(21):testInt8Caffe]:Int8 量化
+[2019-12-05 17:45:22:trt_builder.cpp(200):TRTBuilder::compileTRT]:Build INT8 trtmodel.
+[2019-12-05 17:45:22:trt_builder.cpp(226):TRTBuilder::compileTRT]:imageDirectory is ignore, when entropyCalibratorFile is set
+[2019-12-05 17:45:22:trt_builder.cpp(297):TRTBuilder::compileTRT]:Using plugin factory for build phase.
+[2019-12-05 17:45:22:trt_builder.cpp(315):TRTBuilder::compileTRT]:Marked output blob 'fc_blob1'.
+[2019-12-05 17:45:22:trt_builder.cpp(353):TRTBuilder::compileTRT]:Set max batch size: 4.
+[2019-12-05 17:45:22:trt_builder.cpp(360):TRTBuilder::compileTRT]:Using exist entropy calibrator data[536 bytes]: models/handmodel_resnet18.calibrator.txt
+[2019-12-05 17:45:22:trt_builder.cpp(374):TRTBuilder::compileTRT]:Build engine
+[2019-12-05 17:45:39:main.cpp(31):testInt8Caffe]:Int8 Done
+[2019-12-05 17:45:39:main.cpp(38):testOnnxFP32]:onnx to trtmodel...
+[2019-12-05 17:45:39:trt_builder.cpp(200):TRTBuilder::compileTRT]:Build FP32 trtmodel.
+[2019-12-05 17:45:39:trt_builder.cpp(325):TRTBuilder::compileTRT]:Warning: ONNX has not pluginFactory support
+[2019-12-05 17:45:39:trt_builder.cpp(353):TRTBuilder::compileTRT]:Set max batch size: 4.
+[2019-12-05 17:45:39:trt_builder.cpp(374):TRTBuilder::compileTRT]:Build engine
+[2019-12-05 17:46:07:main.cpp(44):testOnnxFP32]:done.
+[2019-12-05 17:46:07:main.cpp(46):testOnnxFP32]:load model: models/efficientnet-b0.fp32.trtmodel
+[2019-12-05 17:46:07:main.cpp(53):testOnnxFP32]:forward...
+[2019-12-05 17:46:07:main.cpp(76):testOnnxFP32]:top 0: 88.42 %, giant panda, panda, panda bear, coon bear, Ailuropoda melanoleuca
+[2019-12-05 17:46:07:main.cpp(76):testOnnxFP32]:top 1: 0.47 %, lesser panda, red panda, panda, bear cat, cat bear, Ailurus fulgens
+[2019-12-05 17:46:07:main.cpp(76):testOnnxFP32]:top 2: 0.46 %, brown bear, bruin, Ursus arctos
+[2019-12-05 17:46:07:main.cpp(76):testOnnxFP32]:top 3: 0.17 %, American black bear, black bear, Ursus americanus, Euarctos americanus
+[2019-12-05 17:46:07:main.cpp(76):testOnnxFP32]:top 4: 0.15 %, sloth bear, Melursus ursinus, Ursus ursinus
+[2019-12-05 17:46:07:main.cpp(79):testOnnxFP32]:done.
+[2019-12-05 17:46:07:main.cpp(85):testPlugin]:Plugin FP32 转换
+[2019-12-05 17:46:07:trt_builder.cpp(200):TRTBuilder::compileTRT]:Build FP32 trtmodel.
+[2019-12-05 17:46:07:trt_builder.cpp(297):TRTBuilder::compileTRT]:Using plugin factory for build phase.
+[2019-12-05 17:46:07:plugin.cpp(239):Plugin::Manager::builderCreate]:builderCreate WReLU1123
+[2019-12-05 17:46:07:trt_builder.cpp(315):TRTBuilder::compileTRT]:Marked output blob 'myImage'.
+[2019-12-05 17:46:07:trt_builder.cpp(353):TRTBuilder::compileTRT]:Set max batch size: 4.
+[2019-12-05 17:46:07:trt_builder.cpp(374):TRTBuilder::compileTRT]:Build engine
+[2019-12-05 17:46:08:main.cpp(90):testPlugin]:Plugin FP32 Done
+[2019-12-05 17:46:08:main.cpp(92):testPlugin]:加载模型 models/demo.fp32.trtmodel
+[2019-12-05 17:46:08:plugin.cpp(247):Plugin::Manager::inferCreate]:inferCreate WReLU1123
+[2019-12-05 17:46:08:main.cpp(100):testPlugin]:Inference ...
+[2019-12-05 17:46:08:main.cpp(104):testPlugin]:done

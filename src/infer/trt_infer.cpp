@@ -4,7 +4,12 @@
 #include <cuda_runtime.h>
 #include <algorithm>
 #include <cc_util.hpp>
+#include <NvInfer.h>
+#include <NvCaffeParser.h>
+
+#if defined(HAS_PLUGIN)
 #include <plugin/plugin.hpp>
+#endif
 
 using namespace nvinfer1;
 using namespace std;
@@ -327,7 +332,10 @@ namespace TRTInfer {
 			destroy();
 
 			cuCheck(cudaStreamCreate(&stream_));
+
+#if defined(HAS_PLUGIN)
 			pluginFactory_ = Plugin::createPluginFactoryForInferPhase();
+#endif
 			runtime_ = shared_ptr<IRuntime>(createInferRuntime(gLogger), destroyNV<IRuntime>);
 
 			if (runtime_ == nullptr)

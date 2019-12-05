@@ -19,28 +19,32 @@ void testInt8Caffe() {
 	};
 	
 	INFO("Int8 量化");
-	TRTBuilder::caffeToTRT_INT8(
-		"models/handmodel_resnet18.prototxt",
-		"models/handmodel_resnet18.caffemodel",
-		{"fc_blob1"}, 4, "models/handmodel_resnet18.trtmodel", "models/int8data", 
-		preprocess
+	TRTBuilder::compileTRT(
+		TRTBuilder::TRTMode_INT8, 
+		{"fc_blob1"}, 4,
+		TRTBuilder::ModelSource("models/handmodel_resnet18.prototxt", "models/handmodel_resnet18.caffemodel"),
+		"models/handmodel_resnet18.int8.trtmodel", 
+		preprocess, 
+		"models/int8data", 
+		"models/handmodel_resnet18.calibrator.txt"
 	);
 	INFO("Int8 Done");
 }
 
-void testOnnx() {
+void testOnnxFP32() {
 
 	TRTBuilder::setDevice(0);
 
 	INFO("onnx to trtmodel...");
-	TRTBuilder::onnxToTRTFP32OrFP16(
-		"models/efficientnet-b0.onnx", 4, 
-		"models/efficientnet-b0.onnx.trtmodel"
+	TRTBuilder::compileTRT(
+		TRTBuilder::TRTMode_FP32, {}, 4,
+		TRTBuilder::ModelSource("models/efficientnet-b0.onnx"),
+		"models/efficientnet-b0.fp32.trtmodel"
 	);
 	INFO("done.");
 
-	INFO("load model: models/efficientnet-b0.onnx.trtmodel");
-	auto engine = TRTInfer::loadEngine("models/efficientnet-b0.onnx.trtmodel");
+	INFO("load model: models/efficientnet-b0.fp32.trtmodel");
+	auto engine = TRTInfer::loadEngine("models/efficientnet-b0.fp32.trtmodel");
 	if (!engine) {
 		INFO("can not load model.");
 		return;
@@ -78,14 +82,15 @@ void testOnnx() {
 void testPlugin() {
 
 	TRTBuilder::setDevice(0);
-	INFO("FP32 量化");
-	TRTBuilder::caffeToTRTFP32OrFP16(
-		"models/demo.prototxt",
-		"models/demo.caffemodel", {"myImage"}, 4, "models/demo.trtmodel");
-	INFO("FP32 Done");
+	INFO("Plugin FP32 转换");
+	TRTBuilder::compileTRT(
+		TRTBuilder::TRTMode_FP32, {"myImage"}, 4, 
+		TRTBuilder::ModelSource("models/demo.prototxt", "models/demo.caffemodel"), 
+		"models/demo.fp32.trtmodel");
+	INFO("Plugin FP32 Done");
 
-	INFO("加载模型 models/demo.trtmodel");
-	auto engine = TRTInfer::loadEngine("models/demo.trtmodel");
+	INFO("加载模型 models/demo.fp32.trtmodel");
+	auto engine = TRTInfer::loadEngine("models/demo.fp32.trtmodel");
 
 	if (engine == nullptr) {
 		INFO("模型加载失败.");
@@ -105,7 +110,7 @@ int main() {
 	ccutil::setLoggerSaveDirectory(".");
 
 	testInt8Caffe();
-	testOnnx();
+	testOnnxFP32();
 	testPlugin();
 	return 0;
 }

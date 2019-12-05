@@ -23,7 +23,7 @@
 #	include <sys/types.h>
 #	include <sys/stat.h>
 #	include <unistd.h>
-
+#   include <stdarg.h>
 #if defined(HAS_UUID)
 //sudo apt-get install uuid-dev
 #   include <uuid/uuid.h>
@@ -1098,8 +1098,8 @@ namespace ccutil{
 	}
 
 	cv::Rect randbox(cv::Size size, cv::Size limit){
-		int x = randr(0, limit.width - size.width - 1);
-		int y = randr(0, limit.height - size.height - 1);
+		int x = randr(0, limit.width - size.width);
+		int y = randr(0, limit.height - size.height);
 		return cv::Rect(x, y, size.width, size.height);
 	}
 
@@ -1111,7 +1111,7 @@ namespace ccutil{
 
 	int randr(int low, int high){
 		if (high < low) std::swap(low, high);
-		return getRandom()->uniform(low, high + 1);
+		return getRandom()->uniform(low, high);
 	}
 
 	int randr_exclude(int mi, int mx, int exclude){
@@ -1736,7 +1736,7 @@ namespace ccutil{
 
 				//random erase
 				do{
-					int n = ccutil::randr(cacheNames_.size() - 1);
+					int n = ccutil::randr(cacheNames_.size());
 					hits_.erase(cacheNames_[n]);
 					cacheNames_.erase(cacheNames_.begin() + n);
 				} while (hits_.size() > maxCacheSize_);
@@ -2077,6 +2077,12 @@ namespace ccutil{
 
 	static mutex __g_logger_lock_;
 	static string __g_logger_directory;
+	static LoggerListener __g_logger_listener = nullptr;
+	static char __g_logger_buffer[10000];
+	void setLoggerListener(LoggerListener func){
+		__g_logger_listener = func;
+	}
+
 	void setLoggerSaveDirectory(const string& loggerDirectory) {
 
 		std::unique_lock<mutex> l(__g_logger_lock_);
@@ -2105,22 +2111,26 @@ namespace ccutil{
 
 		va_list vl;
 		va_start(vl, fmt);
-		char loggerBuffer[10000];
+		
 		string funcName = function;
 		if (funcName.length() > 32) {
 			funcName = funcName.substr(0, 16) + "..." + funcName.substr(funcName.length() - 10);
 		}
 
-		int n = sprintf(loggerBuffer, "[%s:%s(%d):%s]:", now.c_str(), fileName(file, true).c_str(), line, funcName.c_str());
-		vsprintf(loggerBuffer + n, fmt, vl);
+		int n = sprintf(__g_logger_buffer, "[%s:%s(%d):%s]:", now.c_str(), fileName(file, true).c_str(), line, funcName.c_str());
+		vsprintf(__g_logger_buffer + n, fmt, vl);
 
-		printf("%s\n", loggerBuffer);
+		if (__g_logger_listener != nullptr)
+			__g_logger_listener(__g_logger_buffer);
+		else
+			printf("%s\n", __g_logger_buffer);
+
 		if (!__g_logger_directory.empty()) {
 			string file = dateNow();
 			string savepath = __g_logger_directory + file + ".log";
 			FILE* f = fopen_mkdirs(savepath.c_str(), "a+");
 			if (f) {
-				fprintf(f, "%s\n", loggerBuffer);
+				fprintf(f, "%s\n", __g_logger_buffer);
 				fclose(f);
 			}
 			else {

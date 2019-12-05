@@ -9,6 +9,10 @@
 #include <map>
 #include <opencv2/opencv.hpp>
 
+//为了避免对Plugin的引用，在inference时默认没有插件，复制hpp和cpp即可干活，所以定义了这个宏，当使用插件时打开即可
+//该宏定义只是在反序列化模型之前对pluginFactory做了赋值，没有其他地方再有引用了
+#define HAS_PLUGIN
+
 namespace TRTInfer {
 
 	enum DataHead {
@@ -16,6 +20,8 @@ namespace TRTInfer {
 		DataHead_InCPU
 	};
 
+	//Tensor类，对张量的封装，对GPU、CPU交互操作做了封装
+	//使用者只需要关心数据如何输入以及如何处理，而无需关心数据应该这么复制到GPU以及何时复制到CPU
 	class Tensor {
 	public:
 		Tensor();
@@ -80,6 +86,8 @@ namespace TRTInfer {
 		DataHead head_ = DataHead_InCPU;
 	};
 
+	//TensorRT的inference封装为Engine对象，允许直接加载模型，通过Tensor来操作输入和输出，也允许对input(0)做resize(batch)实现多batch的输入
+	//forward时会自动对output做resize，使得其num维度一致
 	class Engine {
 	public:
 		virtual bool load(const std::string& file) = 0;

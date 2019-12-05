@@ -17,7 +17,7 @@
 * Windows
 * 该封装代码是垮平台的
 
-## 说明-Windows
+## 说明
 * main.cpp里面有3个案例，分别是Int8Caffe、Onnx、Plugin
 * 所有lib依赖项，均采用import_lib.cpp导入，而不是通过配置
 * infer文件夹为对TensorRT封装的Inference代码，目的是简化TensorRT前向过程，封装为Engine类和提供友好高性能的Tensor类支持
@@ -26,6 +26,3 @@
   * 2.outputDims和enqueue方法，参照WReLU.cu和WReLU.hpp，指明该插件的返回维度信息，以及插件前向时的运算具体实现
   * 3.在plugin_list.cpp中添加头文件，然后在buildPluginList中添加AddPlugin(WReLU)代码，进行插件注册，即可
 * builder文件夹则是对模型转换做封装，int8Caffe模型编译，onnx模型编译，fp32/fp16模型编译，通过简单的接口实现模型编译到trtmodel
-
-## 说明-Linux
-* 该代码写的时候是按照垮平台写的，但是目前为止还没来得及在linux下编译，可能存在小错误几个，整体结构不会有太多错误存在

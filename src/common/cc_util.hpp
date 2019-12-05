@@ -24,6 +24,8 @@ namespace ccutil{
 	using std::vector;
 	using std::map;
 
+	typedef void(*LoggerListener)(const char* message);
+
 	struct Timer{
 		double tick = 0;
 
@@ -67,14 +69,14 @@ namespace ccutil{
 		vector<int> out;
 		for (int i = begin; i != end; i += step)
 			out.push_back(i);
-		return std::move(out);
+		return out;
 	}
 
 	inline vector<int> range(int end){
 		vector<int> out;
 		for (int i = 0; i != end; ++i)
 			out.push_back(i);
-		return std::move(out);
+		return out;
 	}
 
 	template<typename _T>
@@ -138,6 +140,7 @@ namespace ccutil{
 	string dateNow();
 	string timeNow();
 	void setLoggerSaveDirectory(const string& loggerDirectory);
+	void setLoggerListener(LoggerListener func);
 	void __assert_func(bool condition, const char* file, int line, const char* function, const char* code);
 	void __log_func(const char* file, int line, const char* function, const char* fmt, ...);
 	///////////////////////////////////////////////////////////////////////////////////////////////
@@ -170,7 +173,7 @@ namespace ccutil{
 	bool saveList(const string& file, const vector<string>& list);
 
 	//name,label,x,y,r,b
-	//æ˜ å°„å‡ºæ¥ç»“æœæ˜¯key = name, value = label,x,y,r,b
+	//Ó³Éä³öÀ´½á¹ûÊÇkey = name, value = label,x,y,r,b
 	map<string, string> loadListMap(const string& listfile);
 	cv::Mat loadMatrix(FILE* file);
 	bool saveMatrix(FILE* file, const cv::Mat& m);
@@ -258,16 +261,16 @@ namespace ccutil{
 
 	void setRandomSeed(int seed);
 
-	//æµ®ç‚¹æ•°è¿”å›çš„ä¸åŒ…å«highï¼Œ[low, high)
+	//¸¡µãÊı·µ»ØµÄ²»°üº¬high£¬[low, high)
 	float randrf(float low, float high);
 	cv::Rect randbox(cv::Size size, cv::Size limit);
 
-	//æ•´æ•°è¿”å›çš„ï¼ŒåŒ…å«highï¼Œ[low, high]
+	//ÕûÊı·µ»ØµÄ£¬°üº¬high£¬[low, high)
 	int randr(int low, int high);
 	int randr(int high);
 	int randr_exclude(int mi, int mx, int exclude);
 
-	//è¿”å›çš„ä¸åŒ…å«endï¼Œ[low, end)
+	//·µ»ØµÄ²»°üº¬end£¬[low, end)
 	vector<int> seque(int begin, int end);
 	vector<int> seque(int end);
 	vector<int> shuffleSeque(int begin, int end);
@@ -275,13 +278,13 @@ namespace ccutil{
 
 	template<typename _T>
 	_T& randitem(vector<_T>& arr){
-		int n = randr(0, (int)arr.size() - 1);
+		int n = randr(0, (int)arr.size());
 		return arr[n];
 	}
 
 	template<typename _T>
 	const _T& randitem(const vector<_T>& arr){
-		int n = randr(0, (int)arr.size() - 1);
+		int n = randr(0, (int)arr.size());
 		return arr[n];
 	}
 
@@ -317,7 +320,7 @@ namespace ccutil{
 		return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2));
 	}
 
-	//è¿”å›32ä½çš„å¤§å†™å­—æ¯çš„uuid
+	//·µ»Ø32Î»µÄ´óĞ´×ÖÄ¸µÄuuid
 	string uuid();
 
 	class BinIO{
@@ -402,7 +405,7 @@ namespace ccutil{
 	class FileCache{
 
 	public:
-		//ä¸º0æ—¶ï¼Œä¸cacheï¼Œä¸º-1æ—¶ï¼Œæ‰€æœ‰éƒ½cache
+		//Îª0Ê±£¬²»cache£¬Îª-1Ê±£¬ËùÓĞ¶¼cache
 		FileCache(int maxCacheSize = -1);
 		string loadfile(const string& file);
 		vector<BBox> loadxml(const string& file, int* width, int* height, const string& filter);
