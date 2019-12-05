@@ -3,3 +3,4 @@
 *.prototxt
 *.trtmodel
 *.onnx
+handmodel_resnet18.calibrator.txt
