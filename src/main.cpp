@@ -100,6 +100,9 @@ void testPlugin() {
 	INFO("Inference ...");
 	engine->input(0)->setTo(-0.5);
 	engine->forward();
+
+	//这里应该输出1.3，因为WReLU随便写的cuda核，
+	//output[position] = (input[position] < 0 ? 0 : input[position]) + 1.3;
 	engine->output(0)->print();
 	INFO("done");
 }
