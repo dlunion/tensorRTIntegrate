@@ -322,7 +322,7 @@ namespace TRTBuilder {
 		}
 		else if(source.type() == ModelSourceType_FromONNX){
 
-			INFO("Warning: ONNX has not pluginFactory support");
+			INFO("Warning: ONNX has no pluginFactory support");
 
 			//onnx没有设置markoutput的接口
 			//from onnx is not markOutput
