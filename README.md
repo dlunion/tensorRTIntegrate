@@ -12,6 +12,43 @@
 * 下载的是代码，具体依赖可以自己配置，也可以下载完整依赖包括DLL的[压缩包](http://zifuture.com:1000/fs/16.std/TensorRT2.zip)，注意这个里面配置完善，代码不一定是最新的，参考其项目配置即可
 ---
 
+
+## 案例-Inference
+```
+auto engine = TRTInfer::loadEngine("models/efficientnet-b0.fp32.trtmodel");
+float mean[3] = {0.485, 0.456, 0.406};
+float std[3] = {0.229, 0.224, 0.225};
+Mat image = imread("img.jpg");
+engine->input()->setNormMat(0, image, mean, std);
+engine->forward();
+engine->output(0)->print();
+```
+
+---
+
+## 案例-INT8
+定义预处理函数，量化INT8需要执行推理，需要正确的分布输入
+```
+auto preprocess = [](int current, int count, cv::Mat& inputOutput) {
+    INFO("process: %d / %d", current, count);
+    inputOutput.convertTo(inputOutput, CV_32F, 1 / 255.0f, -0.5f);
+};
+```
+
+执行编译INT8模型，TRTBuilder::ModelSource指定模型从caffe而来，也可以是onnx
+```
+TRTBuilder::compileTRT(
+    TRTBuilder::TRTMode_INT8, 
+    {"fc_blob1"}, 4,
+    TRTBuilder::ModelSource("models/handmodel_resnet18.prototxt", "models/handmodel_resnet18.caffemodel"),
+    "models/handmodel_resnet18.int8.trtmodel", 
+    preprocess, 
+    "models/int8data", 
+    "models/handmodel_resnet18.calibrator.txt"
+);
+```
+
+
 ## 支持
 * Linux
 * Windows
