@@ -9,6 +9,7 @@
 #include <vector>
 #include <omp.h>
 
+//Task Pool是一个发挥GPU性能，让前向密集的一个类
 template<typename _InOutFormat, typename _Net>
 class Taskpool{
 
@@ -17,7 +18,7 @@ public:
 
 	struct ProcessBatchItem {
 		InOutFormat* data;
-		volatile bool* processFlag = false;
+		volatile bool* processFlag = nullptr;
 		ProcessBatchItem(InOutFormat* data, volatile bool* processFlag) {
 			this->data = data;
 			this->processFlag = processFlag;

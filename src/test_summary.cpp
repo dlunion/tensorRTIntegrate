@@ -1,6 +1,5 @@
 ﻿
 #if 0
-
 #include <opencv2/opencv.hpp>
 #include <cc_util.hpp>
 #include "builder/trt_builder.hpp"
@@ -361,7 +360,6 @@ void testSEQ() {
 }
 
 void testPlugin() {
-
 
 	auto preprocess = [](int current, int count, cv::Mat& inputOutput) {
 		//INFO("process: %d / %d", current, count);
