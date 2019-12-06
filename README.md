@@ -9,7 +9,7 @@
 * cuda10.0（可以任意修改为其他版本）
 * Visual Studio 2017（可以用其他版本打开，但需要修改对应opencv版本）
 * <font color=red>如果要修改版本，你需要下载cuda/cudnn/tensorRT三者同时匹配的版本，因为他们互相存在依赖，否则只要你是cuda10.0就可以很轻易编译这个项目</font>
-* 下载的是代码，点击[下载模型包括DLL等完整压缩包](http://zifuture.com:1000/fs/16.std/TensorRT2.zip)，注意这个里面配置完善，代码不一定是最新的
+* 下载的是代码，点击[下载模型等完整压缩包](http://zifuture.com:1000/fs/16.std/TensorRT2.zip)，注意这个里面配置完善，代码不一定是最新的
 ---
 
 
