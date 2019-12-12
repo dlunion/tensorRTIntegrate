@@ -18,6 +18,8 @@ int WReLU::enqueue(const std::vector<GTensor>& inputs, std::vector<GTensor>& out
 
 	float* ptr = inputs[0].ptr();
 	float* output = outputs[0].ptr();
-	relu << <grid, block >> > (ptr, output, count);
+	relu <<<grid, block>>> (ptr, output, count);
 	return 0;
 }
+
+RegisterPlugin(WReLU);

@@ -14,33 +14,29 @@
 #include <mutex>
 #include <opencv2/opencv.hpp>
 
+#define CCUtilVersion  "1.0.0"
+
 namespace ccutil{
 
 #define ORG_Center			-1000000
-#define Assert(op)		ccutil::__assert_func((op), __FILE__, __LINE__, __FUNCTION__, #op)
-#define INFO(...)	ccutil::__log_func(__FILE__, __LINE__, __FUNCTION__, __VA_ARGS__)
+#define Assert(op)			ccutil::AssertStream(!(!(op)), __FILE__, __LINE__, #op)
+#define AssertEQ(a, b)		Assert(a == b)
+#define AssertNE(a, b)		Assert(a != b)
+#define AssertLE(a, b)		Assert(a <= b)
+#define AssertLT(a, b)		Assert(a < b )
+#define AssertGE(a, b)		Assert(a >= b)
+#define AssertGT(a, b)		Assert(a > b )
+#define LINFO				0
+#define LWARNING			1
+#define LERROR				2
+#define LFATAL				3
+#define INFO(...)			ccutil::__log_func(__FILE__, __LINE__, LINFO, __VA_ARGS__)
+#define LOG(level)			ccutil::LoggerStream(true, level, __FILE__, __LINE__)
+#define LOG_IF(level, op)	ccutil::LoggerStream(!(!(op)), level, __FILE__, __LINE__)
 
 	using std::string;
 	using std::vector;
 	using std::map;
-
-	typedef void(*LoggerListener)(const char* message);
-
-	struct Timer{
-		double tick = 0;
-
-		Timer();
-		void begin();
-		double end();	//ms
-	};
-
-	struct GenNumber{
-		volatile int next_ = 0;
-
-		GenNumber(){}
-		GenNumber(int start) :next_(start){}
-		int next();
-	};
 
 	struct BBox{
 
@@ -63,6 +59,92 @@ namespace ccutil{
 		cv::Point rb() const;
 		BBox offset(const cv::Point& position) const;
 		BBox transfrom(cv::Size sourceSize, cv::Size dstSize);
+	};
+
+	inline string tostr(int val);
+	inline string tostr(unsigned int val);
+	inline string tostr(long val);
+	inline string tostr(unsigned long val);
+	inline string tostr(long long val);
+	inline string tostr(unsigned long long val);
+	inline string tostr(long double val);
+	inline string tostr(double val);
+	inline string tostr(float val);
+	inline const string& tostr(const string& val){ return val; }
+	inline string& tostr(string& val){ return val; }
+	inline string tostr(const char* val){ return val; }
+	inline string tostr(char* val){ return val; }
+	inline string tostr(const void* val);
+
+	string format(const char* fmt, ...);
+	typedef bool(*LoggerListener)(const char* file, int line, int level, const char* message);
+
+	struct Stream{
+		string msg_;
+
+		template <typename _T>
+		Stream& operator << (const vector<_T>& list){
+			if (list.empty()){
+				msg_ += "empty list.";
+				return *this;
+			}
+
+			msg_ += format("list[%d] = {", list.size());
+			for (int i = 0; i < list.size(); ++i){
+
+				if (i < (int)list.size() - 1){
+					msg_ += "\"" + tostr(list[i]) + "\",";
+				}
+				else{
+					msg_ += "\"" + tostr(list[i]) + "\"}";
+				}
+			}
+			return *this;
+		}
+
+		template <typename _T>
+		Stream& operator << (const _T& v){
+			msg_ += tostr(v);
+			return *this;
+		}
+	};
+
+	struct AssertStream : public Stream{
+		bool condition_;
+		const char* file_;
+		int line_;
+		const char* code_;
+
+		AssertStream(bool condition, const char* file, int line, const char* code);
+		AssertStream();
+		virtual ~AssertStream();
+	};
+
+	struct LoggerStream : public Stream{
+
+		bool condition_;
+		const char* file_;
+		int line_;
+		int level_;
+
+		LoggerStream(bool condition, int level, const char* file, int line);
+		virtual ~LoggerStream();
+	};
+
+	struct Timer{
+		double tick = 0;
+
+		Timer();
+		void begin();
+		double end();	//ms
+	};
+
+	struct GenNumber{
+		volatile int next_ = 0;
+
+		GenNumber(){}
+		GenNumber(int start) :next_(start){}
+		int next();
 	};
 
 	inline vector<int> range(int begin, int end, int step = 1){
@@ -141,11 +223,11 @@ namespace ccutil{
 	string timeNow();
 	void setLoggerSaveDirectory(const string& loggerDirectory);
 	void setLoggerListener(LoggerListener func);
-	void __assert_func(bool condition, const char* file, int line, const char* function, const char* code);
-	void __log_func(const char* file, int line, const char* function, const char* fmt, ...);
+	void setLogger(bool hasLogger = true);
+	bool hasLogger();
+	LoggerListener getCatchLoggerListener();
+	void __log_func(const char* file, int line, int level, const char* fmt, ...);
 	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	string format(const char* fmt, ...);
 
 	//bbox nms
 	vector<BBox> nms(vector<BBox>& objs, float iou_threshold);
@@ -170,6 +252,8 @@ namespace ccutil{
 	bool xmlHasObject(const string& file, const string& classes);
 
 	vector<string> loadList(const string& listfile);
+	void rmblank(vector<string>& list);
+	bool isblank(const string& str, char blank = ' ');
 	bool saveList(const string& file, const vector<string>& list);
 
 	//name,label,x,y,r,b
@@ -213,6 +297,11 @@ namespace ccutil{
 	string repsuffix(const string& path, const string& newSuffix);
 	string repstrFast(const string& str, const string& token, const string& value);
 	string repstr(const string& str, const string& token, const string& value);
+
+	//remove suffix
+	//abc.txt               ->   abc
+	//c:/asdf/aaa.txt       ->   c:/asdf/aaa
+	string rmsuffix(const string& path);
 
 	string md5(const void* data, int length);
 	string md5(const string& data);
@@ -351,6 +440,8 @@ namespace ccutil{
 		BinIO& operator >> (string& value);
 		BinIO& operator << (const string& value);
 		BinIO& operator << (const char* value);
+		BinIO& operator << (const vector<string>& value);
+		BinIO& operator >> (vector<string>& value);
 
 		BinIO& operator >> (cv::Mat& value);
 		BinIO& operator << (const cv::Mat& value);

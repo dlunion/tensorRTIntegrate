@@ -19,7 +19,6 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\test_summary.cpp" />
     <ClCompile Include="src\plugin\plugin.cpp" />
-    <ClCompile Include="src\plugin\plugin_list.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\builder\trt_builder.hpp" />

@@ -60,6 +60,5 @@ TRTBuilder::compileTRT(
 * infer文件夹为对TensorRT封装的Inference代码，目的是简化TensorRT前向过程，封装为Engine类和提供友好高性能的Tensor类支持
 * plugin文件夹为对plugin的封装，pluginFactory的实现，以及友好的接口，写新插件只需要
   * 1.plugins里面添加插件类，继承自Plugin::TRTPlugin
-  * 2.outputDims和enqueue方法，参照WReLU.cu和WReLU.hpp，指明该插件的返回维度信息，以及插件前向时的运算具体实现
-  * 3.在plugin_list.cpp中添加头文件，然后在buildPluginList中添加AddPlugin(WReLU)代码，进行插件注册，即可
+  * 2.outputDims和enqueue方法，参照WReLU.cu和WReLU.hpp，指明该插件的返回维度信息，以及插件前向时的运算具体实现，并在cpp/cu底下加上RegisterPlugin(WReLU);，参考WReLU.cu，完成注册
 * builder文件夹则是对模型转换做封装，int8Caffe模型编译，onnx模型编译，fp32/fp16模型编译，通过简单的接口实现模型编译到trtmodel

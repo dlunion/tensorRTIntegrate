@@ -99,30 +99,39 @@ namespace Plugin {
 		return std::shared_ptr<Plugin::TRTPlugin>(new class_());			  \
 	}
 
-#define AddPlugin(class_)	\
-	Manager::addPluginSupport(class_::creator, class_::pattern())
+#define RegisterPlugin(class_)	\
+	static PluginRegister __register##class_(class_::creator, class_::pattern())
+	
+	typedef std::shared_ptr<TRTPlugin>(*PluginCreater)();
 
-	class Manager {
+	struct PluginInfo {
+		PluginCreater creater;
+		std::string pattern;
+	};
+
+	class PluginRegistry {
 	public:
+		virtual void addPlugin(PluginCreater creater, const std::string& pattern) = 0;
+		virtual PluginInfo* findPlugin(const std::string& layerName) = 0;
+	};
 
-		typedef std::shared_ptr<TRTPlugin>(*PluginCreater)();
+	class PluginRegister {
+	public:
+		PluginRegister(PluginCreater creater, const std::string& pattern);
+	};
 
-		struct PluginInfo {
-			PluginCreater creater;
-			std::string pattern;
-		};
+	class TRTBuilderPluginFactory : public nvcaffeparser1::IPluginFactoryExt, public nvinfer1::IPluginFactory {
 
-		Manager();
-		virtual ~Manager();
+	public:
+		//trt的重载函数
+		virtual bool isPluginExt(const char* layerName) override;
+		virtual bool isPlugin(const char* layerName) override;
+		virtual nvinfer1::IPlugin* createPlugin(const char* layerName, const nvinfer1::Weights* weights, int nbWeights) override;
+		virtual nvinfer1::IPlugin* createPlugin(const char* layerName, const void* serialData, size_t serialLength) override;
 
-		void addPluginSupport(PluginCreater creater, const std::string& pattern);
 
 		//如果能找到插件，则说明支持他
 		virtual bool support(const std::string& layerName);
-
-		//通过模式匹配的方式，查找支持的插件
-		PluginInfo* findPlugin(const std::string& layerName);
-		void buildPluginList();
 
 		//根据layerName创建插件
 		virtual std::shared_ptr<TRTPlugin> createPlugin(const std::string& layerName);
@@ -131,26 +140,12 @@ namespace Plugin {
 
 	private:
 		std::vector<std::shared_ptr<nvinfer1::IPluginExt>> plugins_;
-		std::vector<PluginInfo> pluginRegister_;
-	};
-
-	class TRTBuilderPluginFactory : public nvcaffeparser1::IPluginFactoryExt, public nvinfer1::IPluginFactory {
-
-	public:
-		TRTBuilderPluginFactory();
-		virtual ~TRTBuilderPluginFactory();
-		virtual bool isPluginExt(const char* layerName);
-		virtual bool isPlugin(const char* layerName);
-		virtual nvinfer1::IPlugin* createPlugin(const char* layerName, const nvinfer1::Weights* weights, int nbWeights);
-		virtual nvinfer1::IPlugin* createPlugin(const char* layerName, const void* serialData, size_t serialLength);
-
-	private:
-		std::shared_ptr<Manager> manager_;
 	};
 
 	///////////////////////////////////////////////////////////////////////////////////////////
 	std::shared_ptr<nvcaffeparser1::IPluginFactoryExt> createPluginFactoryForBuildPhase();
 	std::shared_ptr<nvinfer1::IPluginFactory> createPluginFactoryForInferPhase();
+	PluginRegistry* getPluginRegistry();
 
 	dim3 gridDims(int numJobs);
 	dim3 blockDims(int numJobs);

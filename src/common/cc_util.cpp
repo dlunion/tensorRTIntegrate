@@ -36,6 +36,137 @@ namespace ccutil{
 
 	using namespace std;
 
+#if defined(U_OS_WINDOWS)
+
+#define _LLFMT	"%I64"
+#define _TOSTRING(buf, fmt, val)	\
+	sprintf_s(buf, sizeof (buf), fmt, val)
+#else
+
+#define _LLFMT	"%ll"
+#define _TOSTRING(buf, fmt, val)	\
+	snprintf(buf, sizeof (buf), fmt, val)
+#endif
+
+	string tostr(int val){
+		char buffer[2 * 32];
+
+		_TOSTRING(buffer, "%d", val);
+		return buffer;
+	}
+
+	string tostr(unsigned int val){
+		char buffer[2 * 32];
+
+		_TOSTRING(buffer, "%u", val);
+		return buffer;
+	}
+
+	string tostr(long val){
+		char buffer[2 * 32];
+
+		_TOSTRING(buffer, "%ld", val);
+		return buffer;
+	}
+
+	string tostr(unsigned long val){
+		char buffer[2 * 32];
+
+		_TOSTRING(buffer, "%lu", val);
+		return buffer;
+	}
+
+	string tostr(long long val){
+		char buffer[2 * 32];
+
+		_TOSTRING(buffer, _LLFMT "d", val);
+		return buffer;
+	}
+
+	string tostr(unsigned long long val){
+		char buffer[2 * 32];
+
+		_TOSTRING(buffer, _LLFMT "u", val);
+		return buffer;
+	}
+
+	string tostr(const void* val){
+		char buffer[64];
+		_TOSTRING(buffer, "%p", val);
+		return buffer;
+	}
+
+	string tostr(long double val)
+	{	// convert long double to string
+		typedef back_insert_iterator<string> _Iter;
+		typedef num_put<char, _Iter> _Nput;
+		const _Nput& _Nput_fac = use_facet<_Nput>(locale());
+		ostream _Ios((streambuf *)0);
+		string str;
+
+		_Ios.setf(ios_base::fixed);
+		_Nput_fac.put(_Iter(str), _Ios, ' ', val);
+		return str;
+	}
+
+	string tostr(double val){
+		return (tostr((long double)val));
+	}
+
+	string tostr(float val){
+		return (tostr((long double)val));
+	}
+
+	static const char* level_string(int level){
+		switch (level){
+		case LINFO: return "I";
+		case LWARNING: return "W";
+		case LERROR: return "E";
+		case LFATAL: return "F";
+		default: return "Unknow";
+		}
+	}
+
+	AssertStream::AssertStream(bool condition, const char* file, int line, const char* code) :
+		condition_(condition), file_(file), line_(line), code_(code){
+	}
+
+	AssertStream::AssertStream(){
+		condition_ = true;
+	}
+
+	AssertStream::~AssertStream(){
+		if (!condition_){
+			if (msg_.empty()){
+				__log_func(file_, line_, LFATAL, "Assert Failure: %s", code_);
+			}
+			else{
+				__log_func(file_, line_, LFATAL, "Assert Failure: %s, %s", code_, msg_.c_str());
+			}
+			abort();
+		}
+	}
+
+	/////////////////////////////////////////////////////////////////////////////
+	LoggerStream::LoggerStream(bool condition, int level, const char* file, int line) :
+		condition_(condition), level_(level), file_(file), line_(line){
+	}
+
+	LoggerStream::~LoggerStream(){
+
+		if (condition_){
+			if (msg_.empty())
+				__log_func(file_, line_, level_, "");
+			else
+				__log_func(file_, line_, level_, "%s", msg_.c_str());
+		}
+
+		if (level_ == LFATAL){
+			abort();
+		}
+	}
+
+	/////////////////////////////////////////////////////////////////////////////
 	static shared_ptr<cv::RNG>& getRandom(){
 
 		static shared_ptr<cv::RNG> g_random;
@@ -150,7 +281,7 @@ namespace ccutil{
 		expandbox.y = (int)(this->y - this->height() * ratio);
 		expandbox.r = (int)(this->r + this->width() * ratio);
 		expandbox.b = (int)(this->b + this->height() * ratio);
-
+		
 		if (limit.area() > 0)
 			expandbox = expandbox.box() & cv::Rect(0, 0, limit.width, limit.height);
 		return expandbox;
@@ -265,38 +396,49 @@ namespace ccutil{
 	}
 
 	vector<string> split(const string& str, const std::string& spstr){
-		char* s = (char*)str.c_str();
-		char* context = nullptr;
-		char* token = strtok_s(s, spstr.c_str(), &context);
-		vector<string> out;
-		while (token){
-			out.push_back(token);
-			token = strtok_s(0, spstr.c_str(), &context);
+
+		vector<string> res;
+		if (str.empty()) return res;
+		if (spstr.empty()) return{ str };
+
+		auto p = str.find(spstr);
+		if (p == string::npos) return{ str };
+
+		res.reserve(5);
+		string::size_type prev = 0;
+		int lent = spstr.length();
+		const char* ptr = str.c_str();
+
+		while (p != string::npos){
+			int len = p - prev;
+			if (len > 0){
+				res.emplace_back(str.substr(prev, len));
+			}
+			prev = p + lent;
+			p = str.find(spstr, prev);
 		}
-		return out;
+
+		int len = str.length() - prev;
+		if (len > 0){
+			res.emplace_back(str.substr(prev, len));
+		}
+		return res;
 	}
 
 	vector<int> splitInt(const string& str, const string& spstr){
-		char* s = (char*)str.c_str();
-		char* context = nullptr;
-		char* token = strtok_s(s, spstr.c_str(), &context);
-		vector<int> out;
-		while (token){
-			out.push_back(atoi(token));
-			token = strtok_s(0, spstr.c_str(), &context);
-		}
+
+		auto arr = split(str, spstr);
+		vector<int> out(arr.size());
+		for (int i = 0; i < arr.size(); ++i)
+			out[i] = atoi(arr[i].c_str());
 		return out;
 	}
 
 	vector<float> splitFloat(const string& str, const string& spstr){
-		char* s = (char*)str.c_str();
-		char* context = nullptr;
-		char* token = strtok_s(s, spstr.c_str(), &context);
-		vector<float> out;
-		while (token){
-			out.push_back(atof(token));
-			token = strtok_s(0, spstr.c_str(), &context);
-		}
+		auto arr = split(str, spstr);
+		vector<float> out(arr.size());
+		for (int i = 0; i < arr.size(); ++i)
+			out[i] = atof(arr[i].c_str());
 		return out;
 	}
 
@@ -799,6 +941,52 @@ namespace ccutil{
 		return str;
 	}
 
+	bool isblank(const string& str, char blank){
+		if (str.empty()) return true;
+		
+		const char* s = str.c_str();
+		int len = str.length();
+		for (int i = 0; i < len; ++i, ++s){
+			if (*s != blank)
+				return false;
+		}
+		return true;
+	}
+
+	void rmblank(vector<string>& list){
+
+		vector<string> result;
+		result.reserve(list.size());
+
+		for (int i = 0; i < list.size(); ++i){
+			if (!isblank(list[i]))
+				result.push_back(list[i]);
+		}
+		std::swap(result, list);
+		
+		//for (int i = (int)list.size() - 1; i >= 0; --i){
+		//	if (isblank(list[i]))
+		//		list.erase(list.begin() + i);
+		//}
+	}
+
+	string rmsuffix(const string& path){
+
+		int p = path.rfind('.');
+		if (p == -1)
+			return path;
+		
+		int l = path.rfind('/');
+
+#ifdef U_OS_WINDOWS
+		int e = path.rfind('\\');
+		l = max(l, e);
+#endif
+		if (p > l)
+			return path.substr(0, p);
+		return path;
+	}
+
 	string vocxml(const string& vocjpg){
 		return repsuffix(repstr(vocjpg, "JPEGImages", "Annotations"), "xml");
 	}
@@ -813,7 +1001,17 @@ namespace ccutil{
 		if (p == -1)
 			return path + "." + newSuffix;
 
-		return path.substr(0, p + 1) + newSuffix;
+		int l = path.rfind('/');
+
+#ifdef U_OS_WINDOWS
+		int e = path.rfind('\\');
+		l = max(l, e);
+#endif
+		if (p > l)
+			return path.substr(0, p + 1) + newSuffix;
+
+		//没有.的文件，只是在尾巴加后缀，这种有点是在路径上的点而不是文件名的点
+		return path + "." + newSuffix;
 	}
 
 	vector<string> batchRepSuffix(const vector<string>& filelist, const string& newSuffix){
@@ -1499,6 +1697,24 @@ namespace ccutil{
 		return *this;
 	}
 
+	BinIO& BinIO::operator << (const vector<string>& value){
+		(*this) << (int)value.size();
+		for (int i = 0; i < value.size(); ++i){
+			(*this) << value[i];
+		}
+		return *this;
+	}
+
+	BinIO& BinIO::operator >> (vector<string>& value){
+		int num;
+		(*this) >> num;
+
+		value.resize(num);
+		for (int i = 0; i < value.size(); ++i)
+			(*this) >> value[i];
+		return *this;
+	}
+
 	BinIO& BinIO::operator >> (cv::Mat& value){
 
 		value = loadMatrix(f_);
@@ -2062,76 +2278,136 @@ namespace ccutil{
 		return time_string;
 	}
 
-	void __assert_func(bool condition, const char* file, int line, const char* function, const char* code) {
+	static struct Logger{
+		mutex logger_lock_;
+		string logger_directory;
+		LoggerListener logger_listener = nullptr;
+		volatile bool has_logger = true;
+		FILE* handler = nullptr;
+		size_t lines = 0;		//日志长度计数
 
-		if (condition) return;
+		void setLoggerSaveDirectory(const string& loggerDirectory) {
 
-		__log_func(file, line, function,
-			"ERROR: Assert is Failure: %s\n"
-			"File: %s:%d\n"
-			"Function: %s",
-			code, file, line, function
-		);
-		abort();
-	}
+			//if logger is stop
+			if (!has_logger)
+				return;
 
-	static mutex __g_logger_lock_;
-	static string __g_logger_directory;
-	static LoggerListener __g_logger_listener = nullptr;
-	static char __g_logger_buffer[10000];
-	void setLoggerListener(LoggerListener func){
-		__g_logger_listener = func;
-	}
+			std::unique_lock<mutex> l(logger_lock_);
+			if (handler != nullptr){
+				//对于已经打开的文件，必须关闭，如果要修改目录的话
+				fclose(handler);
+				handler = nullptr;
+			}
 
-	void setLoggerSaveDirectory(const string& loggerDirectory) {
+			logger_directory = loggerDirectory;
 
-		std::unique_lock<mutex> l(__g_logger_lock_);
-		__g_logger_directory = loggerDirectory;
-
-		if (__g_logger_directory.empty())
-			__g_logger_directory = ".";
+			if (logger_directory.empty())
+				logger_directory = ".";
 
 #if defined(U_OS_LINUX)
-		if (__g_logger_directory.back() != '/') {
-			__g_logger_directory.push_back('/');
-		}
+			if (logger_directory.back() != '/') {
+				logger_directory.push_back('/');
+			}
 #endif
 
 #if defined(U_OS_WINDOWS)
-		if (__g_logger_directory.back() != '/' && __g_logger_directory.back() != '\\') {
-			__g_logger_directory.push_back('/');
-		}
+			if (logger_directory.back() != '/' && logger_directory.back() != '\\') {
+				logger_directory.push_back('/');
+			}
 #endif
+		}
+
+		virtual ~Logger(){
+			if (handler){
+				fclose(handler);
+				handler = nullptr;
+			}
+		}
+	}__g_logger;
+
+	static bool loggerCatchListener(const char* file, int line, int level, const char* message){
+		__log_func(file, line, level, "%s", message);
+		return false;
 	}
 
-	void __log_func(const char* file, int line, const char* function, const char* fmt, ...) {
+	LoggerListener getCatchLoggerListener(){
+		return loggerCatchListener;
+	}
 
-		std::unique_lock<mutex> l(__g_logger_lock_);
+	bool hasLogger(){
+		return __g_logger.has_logger;
+	}
+
+	void setLogger(bool hasLogger){
+		__g_logger.has_logger = hasLogger;
+	}
+
+	void setLoggerListener(LoggerListener func){
+		__g_logger.logger_listener = func;
+	}
+
+	void setLoggerSaveDirectory(const string& loggerDirectory) {
+		__g_logger.setLoggerSaveDirectory(loggerDirectory);
+	}
+
+	void __log_func(const char* file, int line, int level, const char* fmt, ...) {
+
+		if (__g_logger.logger_listener != nullptr){
+			//如果返回false，则直接返回，返回true才会写入日志系统
+			char buffer[10000];
+			va_list vl;
+			va_start(vl, fmt);
+			vsprintf(buffer, fmt, vl);
+			if (!__g_logger.logger_listener(file, line, level, buffer))
+				return;
+		}
+
+		//if logger is stop
+		if (!__g_logger.has_logger)
+			return;
+
+		std::unique_lock<mutex> l(__g_logger.logger_lock_);
 		string now = timeNow();
 
 		va_list vl;
 		va_start(vl, fmt);
 		
-		string funcName = function;
-		if (funcName.length() > 32) {
-			funcName = funcName.substr(0, 16) + "..." + funcName.substr(funcName.length() - 10);
-		}
+		char buffer[10000];
+		int n = sprintf(buffer, "%s[%s:%s:%d]:", level_string(level), now.c_str(), fileName(file, true).c_str(), line);
+		vsprintf(buffer + n, fmt, vl);
+		printf("%s\n", buffer);
 
-		int n = sprintf(__g_logger_buffer, "[%s:%s(%d):%s]:", now.c_str(), fileName(file, true).c_str(), line, funcName.c_str());
-		vsprintf(__g_logger_buffer + n, fmt, vl);
-
-		if (__g_logger_listener != nullptr)
-			__g_logger_listener(__g_logger_buffer);
-		else
-			printf("%s\n", __g_logger_buffer);
-
-		if (!__g_logger_directory.empty()) {
+		if (!__g_logger.logger_directory.empty()) {
 			string file = dateNow();
-			string savepath = __g_logger_directory + file + ".log";
-			FILE* f = fopen_mkdirs(savepath.c_str(), "a+");
-			if (f) {
-				fprintf(f, "%s\n", __g_logger_buffer);
-				fclose(f);
+			string savepath = __g_logger.logger_directory + file + ".log";
+
+			if (__g_logger.handler != nullptr){
+				if (__g_logger.lines % 100 == 0){
+					if (!ccutil::exists(savepath)){
+						fclose(__g_logger.handler);
+						__g_logger.handler = nullptr;
+					}
+				}
+			}
+
+			if (__g_logger.handler == nullptr){
+				__g_logger.handler = fopen_mkdirs(savepath.c_str(), "a+");
+			}
+
+			if (__g_logger.handler) {
+				fprintf(__g_logger.handler, "%s\n", buffer);
+				__g_logger.lines++;
+				
+				if (__g_logger.lines % 100 == 0){
+					//每10行写入到硬盘
+					fflush(__g_logger.handler);
+				}
+
+				if (level == LFATAL){
+					//如果是错误，那么接下来就会结束程序，结束前需要先把文件关闭掉
+					fclose(__g_logger.handler);
+					__g_logger.handler = nullptr;
+				}
 			}
 			else {
 				printf("ERROR: can not open logger file: %s\n", savepath.c_str());

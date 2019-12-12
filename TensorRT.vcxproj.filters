@@ -37,9 +37,6 @@
     <ClCompile Include="src\common\test_common.cpp">
       <Filter>src\common</Filter>
     </ClCompile>
-    <ClCompile Include="src\plugin\plugin_list.cpp">
-      <Filter>src\plugin</Filter>
-    </ClCompile>
     <ClCompile Include="src\main.cpp">
       <Filter>src</Filter>
     </ClCompile>

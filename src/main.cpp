@@ -79,6 +79,73 @@ void testOnnxFP32() {
 	INFO("done.");
 }
 
+void testOnnxINT8() {
+
+	TRTBuilder::setDevice(0);
+
+	auto preprocess = [](int current, int count, cv::Mat& inputOutput) {
+
+		INFO("process: %d / %d", current, count);
+		inputOutput.convertTo(inputOutput, CV_32F, 1 / 255.0f);
+
+		float mean[3] = {0.485, 0.456, 0.406};
+		float std[3] = {0.229, 0.224, 0.225};
+
+		Mat ms[3];
+		split(inputOutput, ms);
+		for (int i = 0; i < 3; ++i) {
+			ms[i] = (ms[i] - mean[i]) / std[i];
+		}
+		merge(ms, 3, inputOutput);
+	};
+
+	INFO("onnx to trtmodel...");
+	TRTBuilder::compileTRT(
+		TRTBuilder::TRTMode_INT8, {}, 4,
+		TRTBuilder::ModelSource("models/efficientnet-b0.onnx"),
+		"models/efficientnet-b0.int8.trtmodel", 
+		preprocess,
+		"models/int8data",
+		"models/efficientnet-b0.calibrator.txt"
+	);
+	INFO("done.");
+
+	INFO("load model: models/efficientnet-b0.int8.trtmodel");
+	auto engine = TRTInfer::loadEngine("models/efficientnet-b0.int8.trtmodel");
+	if (!engine) {
+		INFO("can not load model.");
+		return;
+	}
+
+	INFO("forward...");
+
+	auto labelName = ccutil::loadList("labels_map_lines.txt");
+	float mean[3] = {0.485, 0.456, 0.406};
+	float std[3] = {0.229, 0.224, 0.225};
+	Mat image = imread("img.jpg");
+
+	//对于自己归一化的时候，用setMat函数，要求类型是CV32F并且通道一致
+	//engine->input()->setMat(0, image);
+	engine->input()->setNormMat(0, image, mean, std);
+	engine->forward();
+
+	auto output = engine->output(0);
+	//float conf = 0;
+	//int label = argmax(output->cpu(), output->count(), &conf);
+	//INFO("label: %d, conf = %f", label, conf);
+
+	auto rank5 = topRank(output->cpu(), output->count());
+	for (int i = 0; i < rank5.size(); ++i) {
+		int label = get<0>(rank5[i]);
+		float confidence = get<1>(rank5[i]);
+		string name = labelName[label].substr(4);		//000=abc
+
+		INFO("top %d: %.2f %%, %s", i, confidence * 100, name.c_str());
+	}
+
+	INFO("done.");
+}
+
 void testPlugin() {
 
 	TRTBuilder::setDevice(0);
@@ -112,8 +179,8 @@ int main() {
 	//log保存为文件
 	ccutil::setLoggerSaveDirectory(".");
 
-	testInt8Caffe();
-	testOnnxFP32();
+	//testInt8Caffe();
+	//testOnnxFP32();
 	testPlugin();
 	return 0;
 }

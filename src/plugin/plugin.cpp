@@ -192,36 +192,47 @@ namespace Plugin {
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	Manager::Manager() {
-		buildPluginList();
-	}
-
-	Manager::~Manager() {
-	}
-
-	void Manager::addPluginSupport(PluginCreater creater, const std::string& pattern) {
-		pluginRegister_.push_back(PluginInfo{creater, pattern});
-	}
-
-	//如果能找到插件，则说明支持他
-	bool Manager::support(const std::string& layerName) {
-		return findPlugin(layerName) != nullptr;
-	}
-
-	//通过模式匹配的方式，查找支持的插件
-	Manager::PluginInfo* Manager::findPlugin(const string& layerName) {
-		for (int i = 0; i < pluginRegister_.size(); ++i) {
-			if (ccutil::patternMatch(layerName.c_str(), pluginRegister_[i].pattern.c_str()))
-				return &pluginRegister_[i];
+	class PluginRegistryImpl : public PluginRegistry {
+	public:
+		virtual void addPlugin(PluginCreater creater, const std::string& pattern) {
+			plugins_.push_back({creater, pattern});
 		}
-		return nullptr;
+
+		virtual PluginInfo* findPlugin(const std::string& layerName) {
+			for (int i = 0; i < plugins_.size(); ++i) {
+				if (ccutil::patternMatch(layerName.c_str(), plugins_[i].pattern.c_str()))
+					return &plugins_[i];
+			}
+			return nullptr;
+		}
+
+	private:
+		vector<PluginInfo> plugins_;
+	};
+
+	PluginRegistry* getPluginRegistry() {
+		static shared_ptr<PluginRegistryImpl> instance;
+		if (instance) return instance.get();
+		
+		instance.reset(new PluginRegistryImpl());
+		return instance.get();
+	}
+
+	PluginRegister::PluginRegister(PluginCreater creater, const std::string& pattern) {
+		getPluginRegistry()->addPlugin(creater, pattern);
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//如果能找到插件，则说明支持他
+	bool TRTBuilderPluginFactory::support(const std::string& layerName) {
+		return getPluginRegistry()->findPlugin(layerName) != nullptr;
 	}
 
 	//根据layerName创建插件
-	shared_ptr<TRTPlugin> Manager::createPlugin(const std::string& layerName) {
+	shared_ptr<TRTPlugin> TRTBuilderPluginFactory::createPlugin(const std::string& layerName) {
 
 		//通过名字查找支持的插件信息
-		auto pluginInfo = this->findPlugin(layerName);
+		auto pluginInfo = getPluginRegistry()->findPlugin(layerName);
 
 		//如果找不到就报错，因为support的返回跟这个函数用的同一个，不应该找不到
 		if (pluginInfo == nullptr) {
@@ -235,7 +246,7 @@ namespace Plugin {
 		return pluginInstance;
 	}
 
-	IPlugin* Manager::builderCreate(const std::string& layerName, const Weights* weights, int nbWeights) {
+	IPlugin* TRTBuilderPluginFactory::builderCreate(const std::string& layerName, const Weights* weights, int nbWeights) {
 		INFO("builderCreate %s", layerName.c_str());
 
 		auto instance = createPlugin(layerName);
@@ -243,7 +254,7 @@ namespace Plugin {
 		return instance.get();
 	}
 
-	IPlugin* Manager::inferCreate(const std::string& layerName, const void* serialData, size_t serialLength) {
+	IPlugin* TRTBuilderPluginFactory::inferCreate(const std::string& layerName, const void* serialData, size_t serialLength) {
 		INFO("inferCreate %s", layerName.c_str());
 
 		auto instance = createPlugin(layerName);
@@ -251,29 +262,21 @@ namespace Plugin {
 		return instance.get();
 	}
 
-
 	//////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	TRTBuilderPluginFactory::TRTBuilderPluginFactory() {
-		manager_.reset(new Manager());
-	}
-
-	TRTBuilderPluginFactory::~TRTBuilderPluginFactory() {  }
-
 	bool TRTBuilderPluginFactory::isPluginExt(const char* layerName) {
-		return manager_->support(layerName);
+		return support(layerName);
 	}
 
 	bool TRTBuilderPluginFactory::isPlugin(const char* layerName) {
-		return manager_->support(layerName);
+		return support(layerName);
 	}
 
 	IPlugin* TRTBuilderPluginFactory::createPlugin(const char* layerName, const Weights* weights, int nbWeights) {
-		return manager_->builderCreate(layerName, weights, nbWeights);
+		return builderCreate(layerName, weights, nbWeights);
 	}
 
 	IPlugin* TRTBuilderPluginFactory::createPlugin(const char* layerName, const void* serialData, size_t serialLength) {
-		return manager_->inferCreate(layerName, serialData, serialLength);
+		return inferCreate(layerName, serialData, serialLength);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////
@@ -295,7 +298,6 @@ namespace Plugin {
 		return std::shared_ptr<nvinfer1::IPluginFactory>(new TRTBuilderPluginFactory());
 	}
 	/////////////////////////////////////////////////////////////////////////////////////////////
-
 	//编译FP32模型时：
 	//isPlugin: conv1
 	//isPlugin: batch_norm1
