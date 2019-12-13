@@ -100,7 +100,7 @@ namespace Plugin {
 	}
 
 #define RegisterPlugin(class_)	\
-	static PluginRegister __register##class_(class_::creator, class_::pattern())
+	static Plugin::PluginRegister __register##class_(class_::creator, class_::pattern())
 	
 	typedef std::shared_ptr<TRTPlugin>(*PluginCreater)();
 
