@@ -1,0 +1,12 @@
+name: "resnet18"
+input: "blob1"
+input_dim: 1
+input_dim: 3
+input_dim: 3
+input_dim: 3
+layer{
+    name: "WReLU1123"
+    type: "ReLU"
+    bottom: "blob1"
+    top: "myImage"
+}

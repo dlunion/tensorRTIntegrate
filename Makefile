@@ -1,7 +1,7 @@
 ECHO = @echo
 OUTNAME = ai
 CC := g++
-CUCC := nvcc
+CUCC := nvcc -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_61,code=sm_61
 SRCDIR := src
 OBJDIR := objs
 BINDIR := workspace

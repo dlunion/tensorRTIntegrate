@@ -43,9 +43,6 @@
     <ClCompile Include="src\plugin\plugin.cpp">
       <Filter>src\plugin</Filter>
     </ClCompile>
-    <ClCompile Include="src\test_summary.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\common\cc_util.hpp">

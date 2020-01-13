@@ -41,17 +41,19 @@ namespace ccutil{
 	struct BBox{
 
 		float score = 0; float x = 0; float y = 0; float r = 0; float b = 0;
-		string filename; string classname; int label = 0;
+		int label = 0;
 
 		BBox();
 		BBox(const cv::Rect& other);
-		BBox(float x, float y, float r, float b, float score = 0, const string& filename = "", const string& classname = "");
+		BBox(float x, float y, float r, float b, float score = 0, int label = 0);
 		float width() const;
 		float height() const;
 		float area() const;
+		cv::Point2f center() const;
 		float iouOf(const BBox& b) const;
 		float iouMinOf(const BBox& b) const;
 		BBox mergeOf(const BBox& b) const;
+		BBox expandMargin(float margin, const cv::Size& limit = cv::Size()) const;
 		BBox expand(float ratio, const cv::Size& limit = cv::Size()) const;
 		cv::Rect box() const;
 		operator cv::Rect() const;
@@ -61,15 +63,19 @@ namespace ccutil{
 		BBox transfrom(cv::Size sourceSize, cv::Size dstSize);
 	};
 
-	inline string tostr(int val);
-	inline string tostr(unsigned int val);
-	inline string tostr(long val);
-	inline string tostr(unsigned long val);
-	inline string tostr(long long val);
-	inline string tostr(unsigned long long val);
-	inline string tostr(long double val);
-	inline string tostr(double val);
-	inline string tostr(float val);
+	struct LabBBox : BBox {
+		string filename; string classname;
+	};
+
+	string tostr(int val);
+	string tostr(unsigned int val);
+	string tostr(long val);
+	string tostr(unsigned long val);
+	string tostr(long long val);
+	string tostr(unsigned long long val);
+	string tostr(long double val);
+	string tostr(double val);
+	string tostr(float val);
 	inline const string& tostr(const string& val){ return val; }
 	inline string& tostr(string& val){ return val; }
 	inline string tostr(const char* val){ return val; }
@@ -221,6 +227,7 @@ namespace ccutil{
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	string dateNow();
 	string timeNow();
+	string nowFormat(const string& fmt);
 	void setLoggerSaveDirectory(const string& loggerDirectory);
 	void setLoggerListener(LoggerListener func);
 	void setLogger(bool hasLogger = true);
@@ -230,6 +237,7 @@ namespace ccutil{
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
 	//bbox nms
+	vector<BBox> nmsAsClass(const vector<BBox>& objs, float iou_threshold);
 	vector<BBox> nms(vector<BBox>& objs, float iou_threshold);
 	vector<BBox> nmsMinIoU(vector<BBox>& objs, float iou_threshold);
 
@@ -245,9 +253,9 @@ namespace ccutil{
 	string middle(const string& str, const string& begin, const string& end);
 
 	//load bbox from std xml file
-	vector<BBox> loadxmlFromData(const string& data, int* width, int* height, const string& filter);
-	vector<BBox> loadxml(const string& file, int* width = nullptr, int* height = nullptr, const string& filter = "");
-	bool savexml(const string& file, int width, int height, const vector<BBox>& objs);
+	vector<LabBBox> loadxmlFromData(const string& data, int* width, int* height, const string& filter);
+	vector<LabBBox> loadxml(const string& file, int* width = nullptr, int* height = nullptr, const string& filter = "");
+	bool savexml(const string& file, int width, int height, const vector<LabBBox>& objs);
 	bool xmlEmpty(const string& file);
 	bool xmlHasObject(const string& file, const string& classes);
 
@@ -436,6 +444,7 @@ namespace ccutil{
 		string readData(int numBytes);
 		int readInt();
 		float readFloat();
+		bool eof();
 
 		BinIO& operator >> (string& value);
 		BinIO& operator << (const string& value);
@@ -478,6 +487,7 @@ namespace ccutil{
 		}
 
 	private:
+		long readModeEndSEEK_ = 0;
 		FILE* f_ = nullptr;
 		string memoryWrite_;
 		const char* memoryRead_ = nullptr;
@@ -486,12 +496,6 @@ namespace ccutil{
 		Head flag_ = MemoryWrite;
 	};
 
-	//////////////////////////////////////////////////////////////////////////
-#if defined(U_OS_WINDOWS)
-	void drawText(cv::Mat& dst, const std::string& str, cv::Point org, cv::Scalar color, int fontSize = 12, bool bold = false, bool italic = false, bool underline = false);
-#endif
-
-
 	///////////////////////////////////////////////////////////////////////
 	class FileCache{
 
@@ -499,7 +503,7 @@ namespace ccutil{
 		//为0时，不cache，为-1时，所有都cache
 		FileCache(int maxCacheSize = -1);
 		string loadfile(const string& file);
-		vector<BBox> loadxml(const string& file, int* width, int* height, const string& filter);
+		vector<LabBBox> loadxml(const string& file, int* width, int* height, const string& filter);
 		cv::Mat loadimage(const string& file, int color = 1);
 
 	private:
@@ -511,6 +515,9 @@ namespace ccutil{
 		map<string, string> hits_;
 		vector<string> cacheNames_;
 	};
+
+	void setThreadContext(void* ptr);
+	void* getThreadContext();
 };
 
 #endif //DETECT_UTILS_HPP

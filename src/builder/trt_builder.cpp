@@ -265,7 +265,7 @@ namespace TRTBuilder {
 		else if (mode == TRTMode_FP16) {
 			if (!builder->platformHasFastFp16()) {
 				INFO("Platform not have fast fp16 support");
-				return false;
+				//return false;
 			}
 			builder->setFp16Mode(true);
 		}

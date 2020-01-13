@@ -6,6 +6,7 @@
 #include <cc_util.hpp>
 #include <NvInfer.h>
 #include <NvCaffeParser.h>
+#include <NvInferPlugin.h>
 
 #if defined(HAS_PLUGIN)
 #include <plugin/plugin.hpp>
@@ -14,7 +15,13 @@
 using namespace nvinfer1;
 using namespace std;
 
-#define cuCheck(op)	 Assert((op) == cudaSuccess)
+#define cuCheck(op)														 \
+do {																	 \
+	auto ret = (op);													 \
+	if (ret != cudaSuccess) {											 \
+		LOG(LFATAL) << #op << " fail, " << (int)ret << " != " << (int)cudaSuccess << ", " << cudaGetErrorString(ret);				 \
+	}																	 \
+} while (0);
 
 static class Logger : public ILogger {
 public:
@@ -39,13 +46,22 @@ namespace TRTInfer {
 		cudaSetDevice(device_id);
 	}
 
-	Tensor::Tensor(int n, int c, int h, int w) {
+	bool initNVPlugins() {
+		bool ok = initLibNvInferPlugins(&gLogger, "");
+		if (!ok) {
+			INFO("init lib nvinfer plugins fail.");
+		}
+		return ok;
+	}
+
+	Tensor::Tensor(int n, int c, int h, int w, DataType dtType) {
+		this->dtType_ = dtType;
 		resize(n, c, h, w);
 	}
 
-	Tensor::Tensor(const std::vector<int>& dims):Tensor(dims.size(), dims.data()){}
+	Tensor::Tensor(const std::vector<int>& dims, DataType dtType):Tensor(dims.size(), dims.data(), dtType){}
 
-	Tensor::Tensor(int ndims, const int* dims) {
+	Tensor::Tensor(int ndims, const int* dims, DataType dtType) {
 
 		//最多支持4维的构建
 		Assert(ndims <= 4 && ndims > 0);
@@ -54,6 +70,7 @@ namespace TRTInfer {
 		int c = ndims > 1 ? dims[1] : 1;
 		int h = ndims > 2 ? dims[2] : 1;
 		int w = ndims > 3 ? dims[3] : 1;
+		this->dtType_ = dtType;
 		resize(n, c, h, w);
 	}
 
@@ -61,7 +78,7 @@ namespace TRTInfer {
 
 	void Tensor::release() {
 		if (host_) {
-			delete[] host_;
+			free(host_);
 			host_ = nullptr;  //host为nullptr和其他地址有什么区别
 		}
 
@@ -78,7 +95,7 @@ namespace TRTInfer {
 		return host_ == nullptr;
 	}
 
-	int Tensor::count(int start_axis) const {
+	size_t Tensor::count(int start_axis) const {
 
 		int dims[] = { num_, channel_, height_, width_};
 		start_axis = std::max(0, start_axis);
@@ -116,9 +133,26 @@ namespace TRTInfer {
 		this->reshape(other.num_, other.channel_, other.height_, other.width_);
 	}
 
-	void Tensor::from(const float* ptr, int n, int c, int h, int w) {
+	void Tensor::from(const void* ptr, int n, int c, int h, int w, DataType dtType) {
+		this->dtType_ = dtType;
 		resize(n, c, h, w);
 		memcpy(host_, ptr, bytes_);
+	}
+
+	void Tensor::resize(const std::vector<int>& dims) {
+		resize(dims.size(), dims.data());
+	}
+
+	void Tensor::resize(int ndims, const int* dims) {
+
+		//最多支持4维的构建
+		Assert(ndims <= 4 && ndims > 0);
+
+		int n = ndims > 0 ? dims[0] : 1;
+		int c = ndims > 1 ? dims[1] : 1;
+		int h = ndims > 2 ? dims[2] : 1;
+		int w = ndims > 3 ? dims[3] : 1;
+		resize(n, c, h, w);
 	}
 
 	void Tensor::resize(int n, int c, int h, int w) {
@@ -128,12 +162,12 @@ namespace TRTInfer {
 		h = h == -1 ? this->height_ : h;
 		w = w == -1 ? this->width_ : w;
 
-		int needed_size = n * c * h * w;
+		int needed_size = n * c * h * w * elementSize();
 		if (needed_size > capacity_) {
 			release();
 
-			this->host_ = new float[needed_size];
-			this->bytes_ = needed_size * sizeof(float);
+			this->bytes_ = needed_size;
+			this->host_ = malloc(needed_size);
 			this->capacity_ = needed_size;
 			memset(this->host_, 0, this->bytes_);
 		}
@@ -142,11 +176,11 @@ namespace TRTInfer {
 		this->height_ = h;
 		this->width_ = w;
 		this->head_ = DataHead_InCPU;
-		this->bytes_ = needed_size * sizeof(float);
+		this->bytes_ = needed_size;
 	}
 
 	Tensor& Tensor::operator = (const Tensor& other) {
-		from(other.cpu(), other.num(), other.channel(), other.height(), other.width());
+		from(other.cpu(), other.num(), other.channel(), other.height(), other.width(), other.type());
 		return *this;
 	}
 
@@ -158,21 +192,26 @@ namespace TRTInfer {
 
 		int dims[] = {num_, channel_, height_, width_};
 		int muls[] = {count(1), count(2), count(3), 1};
-		Tensor t(dims[axis0], dims[axis1], dims[axis2], dims[axis3]);
+		Tensor t(dims[axis0], dims[axis1], dims[axis2], dims[axis3], dtType_);
 
-		float* tptr = t.cpu();
-		float* sptr = this->cpu();
+		int esize = elementSize();
+		void* tptr = t.cpu();
+		void* sptr = this->cpu();
 		for (int a0 = 0; a0 < dims[axis0]; ++a0) {
 			for (int a1 = 0; a1 < dims[axis1]; ++a1) {
 				for (int a2 = 0; a2 < dims[axis2]; ++a2)
-					for (int a3 = 0; a3 < dims[axis3]; ++a3)
-						tptr[a0 * t.count(1) + a1 * t.count(2) + a2 * t.count(3) + a3] = sptr[a0 * muls[axis0] + a1 * muls[axis1] + a2 * muls[axis2] + a3 * muls[axis3]];
+					for (int a3 = 0; a3 < dims[axis3]; ++a3) {
+						//tptr[a0 * t.count(1) + a1 * t.count(2) + a2 * t.count(3) + a3] = sptr[a0 * muls[axis0] + a1 * muls[axis1] + a2 * muls[axis2] + a3 * muls[axis3]];
+						size_t offsetTPtr = (a0 * t.count(1) + a1 * t.count(2) + a2 * t.count(3) + a3) * esize;
+						size_t offsetSPtr = (a0 * muls[axis0] + a1 * muls[axis1] + a2 * muls[axis2] + a3 * muls[axis3]) * esize;
+						memcpy((char*)tptr + offsetTPtr, (char*)sptr + offsetSPtr, esize);
+					}
 			}
 		}
 		return t;
 	}
 
-	void Tensor::to_gpu(bool copyedIfCPU) {
+	void Tensor::toGPU(bool copyedIfCPU) {
 
 		if (head_ == DataHead_InGPU)
 			return;
@@ -188,8 +227,8 @@ namespace TRTInfer {
 			cuCheck(cudaMemcpy(device_, host_, bytes_, cudaMemcpyHostToDevice));
 		}
 	}
-		
-	void Tensor::to_cpu(bool copyedIfGPU) {
+	
+	void Tensor::toCPU(bool copyedIfGPU) {
 
 		if (head_ == DataHead_InCPU)
 			return;
@@ -202,31 +241,78 @@ namespace TRTInfer {
 		}
 	}
 
-	const float* Tensor::cpu() const {
-		((Tensor*)this)->to_cpu();
-		return (const float*)host_;
+	void Tensor::toFloat() {
+
+		if (type() == DataType::dtFloat)
+			return;
+
+		if (type() != DataType::dtHalfloat) {
+			LOG(LFATAL) << "not implement function";
+		}
+
+		auto c = count();
+		float* convert_memory = (float*)malloc(c * dataTypeSize(DataType::dtFloat));
+		float* dst = convert_memory;
+		halfloat* src = cpu<halfloat>();
+
+		for (int i = 0; i < c; ++i)
+			*dst++ = *src++;
+
+		this->dtType_ = DataType::dtFloat;
+		resize(-1);
+		memcpy(cpu(), convert_memory, bytes_);
+		free(convert_memory);
 	}
 
-	const float* Tensor::gpu() const {
-		((Tensor*)this)->to_gpu();
-		return (const float*)device_;
+	void Tensor::toHalf() {
+
+		if (type() == DataType::dtHalfloat)
+			return;
+
+		if (type() != DataType::dtFloat) {
+			LOG(LFATAL) << "not implement function";
+		}
+
+		auto c = count();
+		halfloat* convert_memory = (halfloat*)malloc(c * dataTypeSize(DataType::dtHalfloat));
+		halfloat* dst = convert_memory;
+		float* src = cpu<float>();
+
+		for (int i = 0; i < c; ++i) 
+			*dst++ = *src++;
+
+		this->dtType_ = DataType::dtHalfloat;
+		resize(-1);
+		memcpy(cpu(), convert_memory, bytes_);
+		free(convert_memory);
 	}
 
-	float* Tensor::cpu() {
-		to_cpu();
-		return host_;
-	}
-
-	float* Tensor::gpu() {
-		to_gpu();
-		return (float*)device_;
+	void Tensor::setRandom(float low, float high) {
+		int c = count();
+		if (dtType_ == DataType::dtFloat) {
+			float* ptr = cpu<float>();
+			for (int i = 0; i < c; ++i)
+				*ptr++ = ccutil::randrf(low, high);
+		}
+		else {
+			halfloat* ptr = cpu<halfloat>();
+			for (int i = 0; i < c; ++i)
+				*ptr++ = ccutil::randrf(low, high);
+		}
 	}
 
 	void Tensor::setTo(float value) {
 		int c = count();
-		float* ptr = cpu();
-		for (int i = 0; i < c; ++i) 
-			*ptr++ = value;
+		if (dtType_ == DataType::dtFloat) {
+			float* ptr = cpu<float>();
+			for (int i = 0; i < c; ++i)
+				*ptr++ = value;
+		}
+		else {
+			halfloat* ptr = cpu<halfloat>();
+			for (int i = 0; i < c; ++i)
+				*ptr++ = value;
+		}
 	}
 
 	void Tensor::print() {
@@ -236,20 +322,25 @@ namespace TRTInfer {
 			return;
 		}
 
-		cout << ccutil::format("Tensor %p (%d x %d x %d x %d):", this, num_, channel_, height_, width_) << endl;
+		if (type() == DataType::dtFloat) {
+			cout << ccutil::format("Tensor %p (%d x %d x %d x %d):", this, num_, channel_, height_, width_) << endl;
 
-		int h = height_;
-		int w = width_;
-		for (int n = 0; n < num_; ++n) {
-			for (int c = 0; c < channel_; ++c) {
-				float* ptr = cpu(n, c);
-				cv::Mat m1(h, w, CV_32F, ptr);
+			int h = height_;
+			int w = width_;
+			for (int n = 0; n < num_; ++n) {
+				for (int c = 0; c < channel_; ++c) {
+					float* ptr = cpu<float>(n, c);
+					cv::Mat m1(h, w, CV_32F, ptr);
 
-				cout << ccutil::format("data[%d, %d, %d x %d]", n, c, h, w) << endl;
-				cout << m1 << endl;
+					cout << ccutil::format("data[%d, %d, %d x %d]", n, c, h, w) << endl;
+					cout << m1 << endl;
+				}
 			}
+			cout << "===========================================" << endl;
 		}
-		cout << "===========================================" << endl;
+		else {
+			INFO("not implement");
+		}
 	}
 
 	void Tensor::copyFrom(const Tensor& other) {
@@ -275,9 +366,29 @@ namespace TRTInfer {
 		}
 	}
 
+	void Tensor::setMatMeanScale(int n, const cv::Mat& image, float mean[3], float scale) {
+
+		Assert(image.channels() == 3 && !image.empty() && type() == DataType::dtFloat);
+
+		cv::Mat inputframe = image;
+		if (inputframe.size() != cv::Size(width_, height_))
+			cv::resize(inputframe, inputframe, cv::Size(width_, height_));
+
+		inputframe.convertTo(inputframe, CV_32F);
+		inputframe -= cv::Scalar(mean[0], mean[1], mean[2]);
+		if (scale != 1) inputframe *= scale;
+
+		cv::Mat ms[3];
+		for (int c = 0; c < 3; ++c)
+			ms[c] = cv::Mat(height_, width_, CV_32F, cpu<float>(n, c));
+
+		split(inputframe, ms);
+		Assert((void*)ms[0].data == (void*)cpu<float>(n));
+	}
+
 	void Tensor::setNormMat(int n, const cv::Mat& image, float mean[3], float std[3]) {
 
-		Assert(image.channels() == 3 && !image.empty());
+		Assert(image.channels() == 3 && !image.empty() && type() == DataType::dtFloat);
 		
 		float scale = 1 / 255.0;
 		cv::Mat inputframe = image;
@@ -288,10 +399,10 @@ namespace TRTInfer {
 
 		cv::Mat ms[3];
 		for (int c = 0; c < 3; ++c)
-			ms[c] = cv::Mat(height_, width_, CV_32F, cpu(n, c));
+			ms[c] = cv::Mat(height_, width_, CV_32F, cpu<float>(n, c));
 
 		split(inputframe, ms);
-		Assert((void*)ms[0].data == (void*)cpu(n));
+		Assert((void*)ms[0].data == (void*)cpu<float>(n));
 
 		for (int c = 0; c < 3; ++c)
 			ms[c] = (ms[c] - mean[c]) / std[c];
@@ -300,22 +411,22 @@ namespace TRTInfer {
 	void Tensor::setMat(int n, const cv::Mat& _image) {
 
 		cv::Mat image = _image;
-		Assert(!image.empty() && n < num_ && image.channels() == channel_ && CV_MAT_DEPTH(image.type()) == CV_32F);
+		Assert(!image.empty() && n < num_ && image.channels() == channel_ && CV_MAT_DEPTH(image.type()) == CV_32F && type() == DataType::dtFloat);
 		
 		if (image.size() != cv::Size(width_, height_))
 			cv::resize(image, image, cv::Size(width_, height_));
 
 		if (image.channels() == 1) {
-			memcpy(cpu(n), image.data, width_ * height_ * sizeof(float));
+			memcpy(cpu<float>(n), image.data, width_ * height_ * sizeof(float));
 			return;
 		}
 
 		vector<cv::Mat> ms(image.channels());
 		for (int i = 0; i < ms.size(); ++i) 
-			ms[i] = cv::Mat(height_, width_, CV_32F, cpu(n, i));
+			ms[i] = cv::Mat(height_, width_, CV_32F, cpu<float>(n, i));
 
 		cv::split(image, &ms[0]);
-		Assert((void*)ms[0].data == (void*)cpu(n));
+		Assert((void*)ms[0].data == (void*)cpu<float>(n));
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -430,11 +541,13 @@ namespace TRTInfer {
 		for (int i = 0; i < nbBindings; ++i) {
 
 			auto dims = context->engine_->getBindingDimensions(i);
+			//auto dtType = context->engine_->getBindingDataType(i);
+			//这里的dtType是float
 			Assert(dims.nbDims <= 4);
 
 			int newDims[] = {1, 1, 1, 1};
 			memcpy(newDims + 1, dims.d, sizeof(int) * dims.nbDims);
-			auto mapperTensor = new Tensor(4, newDims);
+			auto mapperTensor = new Tensor(4, newDims, TRTInfer::DataType::dtFloat);
 			auto newTensor = shared_ptr<Tensor>(mapperTensor);
 			if (context->engine_->bindingIsInput(i)) {
 				//if is input

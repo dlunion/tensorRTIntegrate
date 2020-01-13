@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <mutex>
 #include <memory>
+#include <thread>
 
 #if defined(U_OS_WINDOWS)
 #	define HAS_UUID
@@ -234,6 +235,10 @@ namespace ccutil{
 		return (b - y) + 1;
 	}
 
+	cv::Point2f BBox::center() const {
+		return cv::Point2f((x + r) * 0.5, (y + b) * 0.5);
+	}
+
 	float BBox::area() const{
 		return width() * height();
 	}
@@ -241,8 +246,8 @@ namespace ccutil{
 	BBox::BBox(){
 	}
 
-	BBox::BBox(float x, float y, float r, float b, float score, const string& filename, const string& classname) :
-		x(x), y(y), r(r), b(b), score(score), filename(filename), classname(classname){
+	BBox::BBox(float x, float y, float r, float b, float score, int label) :
+		x(x), y(y), r(r), b(b), score(score), label(label){
 	}
 
 	BBox::operator cv::Rect() const{
@@ -272,6 +277,19 @@ namespace ccutil{
 		out.r = max(a.r, b.r);
 		out.b = max(a.b, b.b);
 		return out;
+	}
+
+	BBox BBox::expandMargin(float margin, const cv::Size& limit) const {
+
+		BBox expandbox;
+		expandbox.x = (int)(this->x - margin);
+		expandbox.y = (int)(this->y - margin);
+		expandbox.r = (int)(this->r + margin);
+		expandbox.b = (int)(this->b + margin);
+
+		if (limit.area() > 0)
+			expandbox = expandbox.box() & cv::Rect(0, 0, limit.width, limit.height);
+		return expandbox;
 	}
 
 	BBox BBox::expand(float ratio, const cv::Size& limit) const{
@@ -658,7 +676,7 @@ namespace ccutil{
 		return str.substr(p, e - p);
 	}
 
-	bool savexml(const string& file, int width, int height, const vector<BBox>& objs){
+	bool savexml(const string& file, int width, int height, const vector<LabBBox>& objs){
 		FILE* f = fopen(file.c_str(), "wb");
 		if (!f) return false;
 
@@ -681,9 +699,9 @@ namespace ccutil{
 		return true;
 	}
 
-	vector<BBox> loadxmlFromData(const string& data, int* width, int* height, const string& filter){
+	vector<LabBBox> loadxmlFromData(const string& data, int* width, int* height, const string& filter){
 
-		vector<BBox> output;
+		vector<LabBBox> output;
 		if (data.empty())
 			return output;
 
@@ -715,7 +733,7 @@ namespace ccutil{
 				float xmax = atof(middle(part, "<xmax>", "</xmax>").c_str());
 				float ymax = atof(middle(part, "<ymax>", "</ymax>").c_str());
 
-				BBox box;
+				LabBBox box;
 				box.x = xmin;
 				box.y = ymin;
 				box.r = xmax;
@@ -734,7 +752,7 @@ namespace ccutil{
 		return output;
 	}
 
-	vector<BBox> loadxml(const string& file, int* width, int* height, const string& filter){
+	vector<LabBBox> loadxml(const string& file, int* width, int* height, const string& filter){
 		return loadxmlFromData(loadfile(file), width, height, filter);
 	}
 
@@ -1044,6 +1062,38 @@ namespace ccutil{
 
 		if (u <= p) u = path.size();
 		return path.substr(p, u - p);
+	}
+
+	vector<BBox> nmsAsClass(const vector<BBox>& objs, float iou_threshold) {
+
+		map<int, vector<BBox>> mapper;
+		for (int i = 0; i < objs.size(); ++i) {
+			mapper[objs[i].label].push_back(objs[i]);
+		}
+
+		vector<BBox> out;
+		for (auto& item : mapper) {
+			auto& objsClasses = item.second;
+			std::sort(objsClasses.begin(), objsClasses.end(), [](const BBox& a, const BBox& b) {
+				return a.score > b.score;
+			});
+			
+			vector<int> flags(objsClasses.size());
+			for (int i = 0; i < objsClasses.size(); ++i) {
+				if (flags[i] == 1) continue;
+
+				out.push_back(objsClasses[i]);
+				flags[i] = 1;
+				for (int k = i + 1; k < objsClasses.size(); ++k) {
+					if (flags[k] == 0) {
+						float iouUnion = objsClasses[i].iouOf(objsClasses[k]);
+						if (iouUnion > iou_threshold)
+							flags[k] = 1;
+					}
+				}
+			}
+		}
+		return out;
 	}
 
 	vector<BBox> nms(vector<BBox>& objs, float iou_threshold){
@@ -1559,6 +1609,7 @@ namespace ccutil{
 		if (mode.empty())
 			return false;
 
+		bool hasReadMode = false;
 		string mode_ = mode;
 		bool hasBinary = false;
 		for (int i = 0; i < mode_.length(); ++i){
@@ -1566,6 +1617,9 @@ namespace ccutil{
 				hasBinary = true;
 				break;
 			}
+
+			if (mode_[i] == 'r')
+				hasReadMode = true;
 		}
 
 		if (!hasBinary){
@@ -1582,12 +1636,21 @@ namespace ccutil{
 		else
 			f_ = fopen(file.c_str(), mode_.c_str());
 		flag_ = FileIO;
+
+		readModeEndSEEK_ = 0;
+		if (hasReadMode && f_ != nullptr){
+			//获取他的end
+			fseek(f_, 0, SEEK_END);
+			readModeEndSEEK_ = ftell(f_);
+			fseek(f_, 0, SEEK_SET);
+		}
 		return opened();
 	}
 
 	void BinIO::close(){
 
 		if (flag_ == FileIO) {
+			readModeEndSEEK_ = 0;
 			if (f_) {
 				fclose(f_);
 				f_ = nullptr;
@@ -1641,6 +1704,24 @@ namespace ccutil{
 		}
 		else {
 			return -1;
+		}
+	}
+	
+	bool BinIO::eof(){
+		if (!opened()) return true;
+
+		if (flag_ == FileIO){
+			return ftell(f_) >= readModeEndSEEK_ || feof(f_);
+		}
+		else if (flag_ == MemoryRead){
+			return this->memoryCursor_ >= this->memoryLength_;
+		}
+		else if (flag_ == MemoryWrite){
+			return false;
+		}
+		else {
+			INFO("Unsupport flag: %d", flag_);
+			return true;
 		}
 	}
 
@@ -1750,188 +1831,12 @@ namespace ccutil{
 
 
 	//////////////////////////////////////////////////////////////////////////
-#if defined(U_OS_WINDOWS)
-	void GetStringSize(HDC hDC, const char* str, int* w, int* h)
-	{
-		SIZE size;
-		GetTextExtentPoint32A(hDC, str, strlen(str), &size);
-		if (w != 0) *w = size.cx;
-		if (h != 0) *h = size.cy;
-	}
-
-	void drawText(cv::Mat& _dst, const std::string& str, cv::Point org, cv::Scalar color, int fontSize, bool bold, bool italic, bool underline)
-	{
-		IplImage ipldst = _dst;
-		IplImage* dst = &ipldst;
-		if (dst == nullptr)
-			return;
-		
-		if (dst->depth != IPL_DEPTH_8U){
-			printf("drawText input image.depth != 8U\n");
-			return;
-		}
-
-		if (dst->nChannels != 1 && dst->nChannels != 3){
-			printf("drawText image.channels only support 1 or 3\n");
-			return;
-		}
-
-		//if (box) box->x = box->y = box->width = box->height = 0;
-		int x, y, r, b;
-		if (org.x > dst->width || org.y > dst->height) return;
-
-		LOGFONTA lf;
-		lf.lfHeight = -fontSize;
-		lf.lfWidth = 0;
-		lf.lfEscapement = 0;
-		lf.lfOrientation = 0;
-		lf.lfWeight = bold ? FW_BOLD : FW_NORMAL;
-		lf.lfItalic = italic;	//斜体
-		lf.lfUnderline = underline;	//下划线
-		lf.lfStrikeOut = 0;
-		lf.lfCharSet = DEFAULT_CHARSET;
-		lf.lfOutPrecision = 0;
-		lf.lfClipPrecision = 0;
-		lf.lfQuality = PROOF_QUALITY;
-		lf.lfPitchAndFamily = 0;
-		strcpy(lf.lfFaceName, "微软雅黑");
-
-		HFONT hf = CreateFontIndirectA(&lf);
-		HDC hDC = CreateCompatibleDC(0);
-		HFONT hOldFont = (HFONT)SelectObject(hDC, hf);
-
-		int strBaseW = 0, strBaseH = 0;
-		int singleRow = 0;
-		char buf[3000];
-		strcpy(buf, str.c_str());
-
-		//处理多行
-		{
-			int nnh = 0;
-			int cw, ch;
-			const char* ln = strtok(buf, "\n");
-			while (ln != 0)
-			{
-				GetStringSize(hDC, ln, &cw, &ch);
-				strBaseW = max(strBaseW, cw);
-				strBaseH = max(strBaseH, ch);
-
-				ln = strtok(0, "\n");
-				nnh++;
-			}
-			singleRow = strBaseH;
-			strBaseH *= nnh;
-		}
-
-		int centerx = 0;
-		int centery = 0;
-		if (org.x < ORG_Center*0.5){
-			org.x = (dst->width - strBaseW) * 0.5 + (org.x - ORG_Center);
-			centerx = 1;
-		}
-
-		if (org.y < ORG_Center*0.5){
-			org.y = (dst->height - strBaseH) * 0.5 + (org.y - ORG_Center);
-			centery = 1;
-		}
-
-		x = org.x < 0 ? -org.x : 0;
-		y = org.y < 0 ? -org.y : 0;
-
-		if (org.x + strBaseW < 0 || org.y + strBaseH < 0)
-		{
-			SelectObject(hDC, hOldFont);
-			DeleteObject(hf);
-			DeleteObject(hDC);
-			return;
-		}
-
-		r = org.x + strBaseW > dst->width ? dst->width - org.x - 1 : strBaseW - 1;
-		b = org.y + strBaseH > dst->height ? dst->height - org.y - 1 : strBaseH - 1;
-		org.x = org.x < 0 ? 0 : org.x;
-		org.y = org.y < 0 ? 0 : org.y;
-
-		BITMAPINFO bmp = { 0 };
-		BITMAPINFOHEADER& bih = bmp.bmiHeader;
-		int strDrawLineStep = strBaseW * 3 % 4 == 0 ? strBaseW * 3 : (strBaseW * 3 + 4 - ((strBaseW * 3) % 4));
-
-		bih.biSize = sizeof(BITMAPINFOHEADER);
-		bih.biWidth = strBaseW;
-		bih.biHeight = strBaseH;
-		bih.biPlanes = 1;
-		bih.biBitCount = 24;
-		bih.biCompression = BI_RGB;
-		bih.biSizeImage = strBaseH * strDrawLineStep;
-		bih.biClrUsed = 0;
-		bih.biClrImportant = 0;
-
-		void* pDibData = 0;
-		HBITMAP hBmp = CreateDIBSection(hDC, &bmp, DIB_RGB_COLORS, &pDibData, 0, 0);
-		if (pDibData == nullptr) return;
-
-		HBITMAP hOldBmp = (HBITMAP)SelectObject(hDC, hBmp);
-
-		//color.val[2], color.val[1], color.val[0]
-		SetTextColor(hDC, RGB(255, 255, 255));
-		SetBkColor(hDC, 0);
-		//SetStretchBltMode(hDC, COLORONCOLOR);
-
-		strcpy(buf, str.c_str());
-		const char* ln = strtok(buf, "\n");
-		int outTextY = 0;
-		while (ln != 0)
-		{
-			if (centerx){
-				int cw, ch;
-				GetStringSize(hDC, ln, &cw, &ch);
-				TextOutA(hDC, (strBaseW - cw) * 0.5, outTextY, ln, strlen(ln));
-			}
-			else{
-				TextOutA(hDC, 0, outTextY, ln, strlen(ln));
-			}
-			outTextY += singleRow;
-			ln = strtok(0, "\n");
-		}
-
-		//if (box){
-		//	*box = cv::Rect(org.x, org.y, strBaseW, strBaseH);
-		//	*box = *box & cv::Rect(0, 0, dst->width, dst->height);
-		//}
-
-		unsigned char* pImg = (unsigned char*)dst->imageData + org.x * dst->nChannels + org.y * dst->widthStep;
-		unsigned char* pStr = (unsigned char*)pDibData + x * 3;
-		for (int tty = y; tty <= b; ++tty)
-		{
-			unsigned char* subImg = pImg + (tty - y) * dst->widthStep;
-			unsigned char* subStr = pStr + (strBaseH - tty - 1) * strDrawLineStep;
-			for (int ttx = x; ttx <= r; ++ttx)
-			{
-				for (int n = 0; n < dst->nChannels; ++n){
-					float alpha = subStr[n] / 255.0f;
-					subImg[n] = cv::saturate_cast<uchar>(alpha * color.val[n] + (1 - alpha) * subImg[n]);
-				}
-
-				subStr += 3;
-				subImg += dst->nChannels;
-			}
-		}
-
-		SelectObject(hDC, hOldBmp);
-		SelectObject(hDC, hOldFont);
-		DeleteObject(hf);
-		DeleteObject(hBmp);
-		DeleteDC(hDC);
-	}
-#endif
-
-
-	///////////////////////////////////////////////////////////////////////
 	//为0时，不cache，为-1时，所有都cache
 	FileCache::FileCache(int maxCacheSize){
 		maxCacheSize_ = maxCacheSize;
 	}
 
-	vector<BBox> FileCache::loadxml(const string& file, int* width, int* height, const string& filter){
+	vector<LabBBox> FileCache::loadxml(const string& file, int* width, int* height, const string& filter){
 		return loadxmlFromData(this->loadfile(file), width, height, filter);
 	}
 
@@ -2262,6 +2167,40 @@ namespace ccutil{
 	_getsystime(&t);
 #endif
 
+	string nowFormat(const string& fmt) {
+		string output;
+		__GetTimeBlock;
+
+		char buf[100];
+		for (int i = 0; i < fmt.length(); ++i) {
+			char c = fmt[i];
+			if (c == 'Y') {			//year
+				sprintf(buf, "%04d", t.tm_year + 1900);
+			}
+			else if (c == 'M') {	//Month
+				sprintf(buf, "%02d", t.tm_mon + 1);
+			}
+			else if (c == 'D') {	//Day
+				sprintf(buf, "%02d", t.tm_mday);
+			}
+			else if (c == 'h') {	//hour
+				sprintf(buf, "%02d", t.tm_hour);
+			}
+			else if (c == 'm') {	//minute
+				sprintf(buf, "%02d", t.tm_min);
+			}
+			else if (c == 's') {	//second
+				sprintf(buf, "%02d", t.tm_sec);
+			}
+			else {
+				output.push_back(c);
+				continue;
+			}
+			output += buf;
+		}
+		return output;
+	}
+
 	string timeNow(){
 		char time_string[20];
 		__GetTimeBlock;
@@ -2413,6 +2352,54 @@ namespace ccutil{
 				printf("ERROR: can not open logger file: %s\n", savepath.c_str());
 			}
 		}
+	}
+
+	class ThreadContext {
+	public:
+		struct Context {
+			void* data_ = nullptr;
+		};
+
+		Context* getContext(thread::id idd) {
+			Context* output = nullptr;
+			std::unique_lock<mutex> l(lock_);
+			auto iter = contextMapper_.find(idd);
+			if (iter != contextMapper_.end()) {
+				output = iter->second.get();
+			}
+			return output;
+		}
+
+		Context* getAndCreateContext(thread::id idd) {
+			Context* output = nullptr;
+			std::unique_lock<mutex> l(lock_);
+			auto iter = contextMapper_.find(idd);
+			if (iter != contextMapper_.end()) {
+				output = iter->second.get();
+			}
+			else {
+				output = new Context();
+				contextMapper_[idd].reset(output);
+			}
+			return output;
+		}
+
+	private:
+		mutex lock_;
+		map<thread::id, shared_ptr<Context>> contextMapper_;
+	};
+
+	static shared_ptr<ThreadContext> g_threadContext(new ThreadContext());
+	void setThreadContext(void* ptr) {
+		g_threadContext->getAndCreateContext(this_thread::get_id())->data_ = ptr;
+	}
+
+	void* getThreadContext() {
+		auto context = g_threadContext->getContext(this_thread::get_id());
+		void* data = nullptr;
+		if (!context) 
+			data = context->data_;
+		return data;
 	}
 	//////////////////////////////////////////////////////////////////////////////////////////////////////
 };

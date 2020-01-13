@@ -6,7 +6,7 @@
 #include <NvInfer.h>
 #include <NvCaffeParser.h>
 #include <vector>
-#include <cc_util.hpp>
+#include <common/cc_util.hpp>
 #include <cuda_runtime.h>
 #include <set>
 #include <infer/trt_infer.hpp>
@@ -19,16 +19,33 @@ namespace Plugin {
 	int position = (blockDim.x * blockIdx.x + threadIdx.x);		\
 	if (position >= (edge)) return;
 
+	enum Phase {
+		CompilePhase,
+		InferencePhase
+	};
+
 	struct GTensor {
 		GTensor() {}
+		GTensor(const TRTInfer::Tensor& tensor);
 		GTensor(float* ptr, int n, int c, int h, int w);
+		GTensor(TRTInfer::halfloat* ptr, int n, int c, int h, int w);
 		int count(int start_axis = 0) const;
 		inline int offset(int n = 0, int c = 0, int h = 0, int w = 0) const { return ((n * this->channel_ + c) * this->height_ + h) * this->width_ + w; }
-		inline float* ptr() const { return ptr_; }
-		inline float* ptr(int n, int c = 0, int h = 0, int w = 0) const { return ptr_ + offset(n, c, h, w); }
+
+		template<typename _T>
+		inline _T* ptr() const { return (_T*)ptr_; }
+
+		template<typename _T>
+		inline _T* ptr(int n, int c = 0, int h = 0, int w = 0) const { return (_T*)ptr_ + offset(n, c, h, w); }
+
+		inline float* ptr_float() const { return (float*)ptr_; }
+		inline float* ptr_float(int n, int c = 0, int h = 0, int w = 0) const { return (float*)ptr_ + offset(n, c, h, w); }
+		inline TRTInfer::halfloat* ptr_half() const { return (TRTInfer::halfloat*)ptr_; }
+		inline TRTInfer::halfloat* ptr_half(int n, int c = 0, int h = 0, int w = 0) const { return (TRTInfer::halfloat*)ptr_ + offset(n, c, h, w); }
 
 		int num_ = 0, channel_ = 0, height_ = 0, width_ = 0;
-		float* ptr_ = nullptr;
+		void* ptr_ = nullptr;
+		TRTInfer::DataType dtType_ = TRTInfer::DataType::dtFloat;
 	};
 
 	struct LayerConfig {
@@ -36,12 +53,15 @@ namespace Plugin {
 		///////////////////////////////////
 		//可以修改的配置
 		int nbOutput_ = 1;
-		int workspaceSize_ = 0;
-		std::set<nvinfer1::DataType> dataType_;
-		std::set<nvinfer1::PluginFormat> pluginFormat_;
+		size_t workspaceSize_ = 0;
+		std::set<nvinfer1::DataType> supportDataType_;
+		std::set<nvinfer1::PluginFormat> supportPluginFormat_;
 
 		//config时请构造权重相关信息和配置，复制权重如果发现count不匹配时会报错
 		std::vector<std::shared_ptr<TRTInfer::Tensor>> weights_;
+		TRTInfer::DataType configDataType_;
+		nvinfer1::PluginFormat configPluginFormat_;
+		int configMaxbatchSize_ = 0;		
 
 		///////////////////////////////////
 		//自动赋值的配置
@@ -63,7 +83,7 @@ namespace Plugin {
 
 		virtual ~TRTPlugin();
 		virtual nvinfer1::Dims outputDims(int index, const nvinfer1::Dims* inputDims, int nbInputDims) = 0;
-		virtual int enqueue(const std::vector<GTensor>& inputs, std::vector<GTensor>& outputs, cudaStream_t stream) = 0;
+		virtual int enqueue(const std::vector<GTensor>& inputs, std::vector<GTensor>& outputs, const std::vector<GTensor>& weights, void* workspace, cudaStream_t stream) = 0;
 
 		void pluginInit(const std::string& name, const nvinfer1::Weights* weights, int nbWeights);
 		void pluginInit(const std::string& name, const void* serialData, size_t serialLength);
@@ -79,15 +99,21 @@ namespace Plugin {
 		virtual void configure(const nvinfer1::Dims* inputDims, int nbInputs, const nvinfer1::Dims* outputDims, int nbOutputs, int maxBatchSize);
 		virtual int initialize();
 		virtual void terminate();
-		virtual size_t getWorkspaceSize(int maxBatchSize) const;
+		virtual size_t getWorkspaceSize(int maxBatchSize) const override;
 		virtual int enqueue(int batchSize, const void* const* inputs, void** outputs, void* workspace, cudaStream_t stream);
 		virtual size_t getSerializationSize();
 		virtual void serialize(void* buffer);
 
+	private:
+		void mappingToGTensor();
+
 	protected:
+		std::string layerName_;
+		Phase phase_ = CompilePhase;
 		std::shared_ptr<LayerConfig> config_;
 		std::vector<GTensor> inputTensors_;
 		std::vector<GTensor> outputTensors_;
+		std::vector<GTensor> weightTensors_;
 	};
 
 #define SETUP_PLUGIN(class_, pattern_)									  \
@@ -149,6 +175,8 @@ namespace Plugin {
 
 	dim3 gridDims(int numJobs);
 	dim3 blockDims(int numJobs);
+
+#define ExecuteKernel(numJobs, kernel, stream)		kernel<<<gridDims(numJobs), blockDims(numJobs), 0, stream>>>
 }; //namespace Plugin
 
 #endif //PLUGIN_BASE_HPP

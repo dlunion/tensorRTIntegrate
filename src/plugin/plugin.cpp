@@ -14,6 +14,25 @@ namespace Plugin {
 		this->channel_ = c;
 		this->height_ = h;
 		this->width_ = w;
+		this->dtType_ = TRTInfer::DataType::dtFloat;
+	}
+
+	GTensor::GTensor(TRTInfer::halfloat* ptr, int n, int c, int h, int w) {
+		this->ptr_ = ptr;
+		this->num_ = n;
+		this->channel_ = c;
+		this->height_ = h;
+		this->width_ = w;
+		this->dtType_ = TRTInfer::DataType::dtHalfloat;
+	}
+
+	GTensor::GTensor(const TRTInfer::Tensor& tensor) {
+		this->ptr_ = (float*)tensor.gpu();
+		this->num_ = tensor.num();
+		this->channel_ = tensor.channel();
+		this->height_ = tensor.height();
+		this->width_ = tensor.width();
+		this->dtType_ = TRTInfer::DataType::dtFloat;
 	}
 
 	int GTensor::count(int start_axis) const {
@@ -29,8 +48,10 @@ namespace Plugin {
 
 	///////////////////////////////////
 	LayerConfig::LayerConfig() {
-		dataType_ = {nvinfer1::DataType::kFLOAT};
-		pluginFormat_ = {nvinfer1::PluginFormat::kNCHW};
+		supportDataType_ = {nvinfer1::DataType::kFLOAT};
+		supportPluginFormat_ = {nvinfer1::PluginFormat::kNCHW};
+		configDataType_ = TRTInfer::DataType::dtFloat;
+		configPluginFormat_ = nvinfer1::PluginFormat::kNCHW;
 	}
 
 	void LayerConfig::serialCopyTo(void* buffer) {
@@ -43,10 +64,23 @@ namespace Plugin {
 		ccutil::BinIO out;
 		out << input;
 		out << output;
+		out << workspaceSize_;
+		out << configDataType_;
+		out << configPluginFormat_;
+		out << configMaxbatchSize_;
 
 		out << (int)weights_.size();
 		for (int i = 0; i < weights_.size(); ++i) {
+
+			if (configDataType_ == TRTInfer::DataType::dtFloat) {
+				weights_[i]->toFloat();
+			}
+			else if (configDataType_ == TRTInfer::DataType::dtHalfloat) {
+				weights_[i]->toHalf();
+			}
+
 			out << weights_[i]->dims();
+			out << weights_[i]->type();
 			out.write((char*)weights_[i]->cpu(), weights_[i]->bytes());
 		}
 
@@ -60,6 +94,10 @@ namespace Plugin {
 		ccutil::BinIO in(ptr, length);
 		in >> input;
 		in >> output;
+		in >> workspaceSize_;
+		in >> configDataType_;
+		in >> configPluginFormat_;
+		in >> configMaxbatchSize_;
 
 		int nbWeights = 0;
 		in >> nbWeights;
@@ -68,8 +106,13 @@ namespace Plugin {
 		for (int i = 0; i < nbWeights; ++i) {
 			std::vector<int> dims;
 			in >> dims;
-			weights_[i].reset(new TRTInfer::Tensor(dims));
+
+			TRTInfer::DataType dt;
+			in >> dt;
+
+			weights_[i].reset(new TRTInfer::Tensor(dims, dt));
 			in.read(weights_[i]->cpu(), weights_[i]->bytes());
+			weights_[i]->gpu();
 		}
 		deseril(in);
 	}
@@ -78,7 +121,6 @@ namespace Plugin {
 
 		Assert(nbWeights == weights_.size());
 		for (int i = 0; i < nbWeights; ++i) {
-
 			//weights应该在config的时候就已经指定了，这里要求数量是一致的
 			Assert(weights[i].type == nvinfer1::DataType::kFLOAT);	//这里要求权重类型必须是fp32，默认定义的
 			Assert(weights_[i] != nullptr && weights_[i]->count() == weights[i].count);
@@ -92,6 +134,8 @@ namespace Plugin {
 	}
 
 	void TRTPlugin::pluginInit(const std::string& name, const nvinfer1::Weights* weights, int nbWeights) {
+		phase_ = CompilePhase;
+		layerName_ = name;
 		config_ = config(name);
 		Assert(config_ != nullptr);
 		config_->output.resize(config_->nbOutput_);
@@ -99,6 +143,8 @@ namespace Plugin {
 	}
 
 	void TRTPlugin::pluginInit(const std::string& name, const void* serialData, size_t serialLength) {
+		phase_ = InferencePhase;
+		layerName_ = name;
 		config_ = config(name);
 		Assert(config_ != nullptr);
 		config_->deserialize(serialData, serialLength);
@@ -109,14 +155,27 @@ namespace Plugin {
 	}
 
 	bool TRTPlugin::supportsFormat(nvinfer1::DataType type, nvinfer1::PluginFormat format) const {
-		//INFO("supportsFormat %d, %d", type, format);
-		return config_->dataType_.find(type) != config_->dataType_.end() &&
-			config_->pluginFormat_.find(format) != config_->pluginFormat_.end();
+		INFO("supportsFormat %d, %d", type, format);
+		return config_->supportDataType_.find(type) != config_->supportDataType_.end() &&
+			config_->supportPluginFormat_.find(format) != config_->supportPluginFormat_.end();
 	}
 
 	void TRTPlugin::configureWithFormat(
 		const nvinfer1::Dims* inputDims, int nbInputs, const nvinfer1::Dims* outputDims,
 		int nbOutputs, nvinfer1::DataType type, nvinfer1::PluginFormat format, int maxBatchSize) {
+
+		INFO("configureWithFormat: type: %d", type);
+		if (type == nvinfer1::DataType::kFLOAT) {
+			this->config_->configDataType_ = TRTInfer::DataType::dtFloat;
+		}
+		else if (type == nvinfer1::DataType::kHALF) {
+			this->config_->configDataType_ = TRTInfer::DataType::dtHalfloat;
+		}
+		else {
+			LOG(LFATAL) << "unsuport datatype: " << (int)type;
+		}
+		this->config_->configPluginFormat_ = format;
+		this->config_->configMaxbatchSize_ = maxBatchSize;
 	}
 
 	int TRTPlugin::getNbOutputs() const {
@@ -136,6 +195,7 @@ namespace Plugin {
 	}
 
 	void TRTPlugin::configure(const nvinfer1::Dims* inputDims, int nbInputs, const nvinfer1::Dims* outputDims, int nbOutputs, int maxBatchSize) {
+		//INFO("configure ");
 	}
 
 	int TRTPlugin::initialize() {
@@ -149,10 +209,11 @@ namespace Plugin {
 		return config_->workspaceSize_;
 	}
 
-	int TRTPlugin::enqueue(int batchSize, const void* const* inputs, void** outputs, void* workspace, cudaStream_t stream) {
+	void TRTPlugin::mappingToGTensor() {
 		if (inputTensors_.empty()) {
 			inputTensors_.resize(config_->input.size());
 			outputTensors_.resize(config_->output.size());
+			weightTensors_.resize(config_->weights_.size());
 			for (int i = 0; i < inputTensors_.size(); ++i) {
 				auto& dims = config_->input[i];
 				inputTensors_[i].num_ = 1;
@@ -168,18 +229,35 @@ namespace Plugin {
 				outputTensors_[i].height_ = dims.nbDims > 1 ? dims.d[1] : 1;
 				outputTensors_[i].width_ = dims.nbDims > 2 ? dims.d[2] : 1;
 			}
+
+			for (int i = 0; i < weightTensors_.size(); ++i) {
+				auto& w = config_->weights_[i];
+				weightTensors_[i].num_ = w->num();
+				weightTensors_[i].channel_ = w->channel();
+				weightTensors_[i].height_ = w->height();
+				weightTensors_[i].width_ = w->width();
+				weightTensors_[i].ptr_ = w->gpu();
+				weightTensors_[i].dtType_ = w->type();
+			}
 		}
+	}
+
+	int TRTPlugin::enqueue(int batchSize, const void* const* inputs, void** outputs, void* workspace, cudaStream_t stream) {
+		//INFO("enqueue");
+		mappingToGTensor();
 
 		for (int i = 0; i < inputTensors_.size(); ++i) {
 			inputTensors_[i].num_ = batchSize;
-			inputTensors_[i].ptr_ = (float*)inputs[i];
+			inputTensors_[i].ptr_ = (void*)inputs[i];
+			inputTensors_[i].dtType_ = config_->configDataType_;
 		}
 
 		for (int i = 0; i < outputTensors_.size(); ++i) {
 			outputTensors_[i].num_ = batchSize;
-			outputTensors_[i].ptr_ = (float*)outputs[i];
+			outputTensors_[i].ptr_ = outputs[i];
+			inputTensors_[i].dtType_ = config_->configDataType_;
 		}
-		return enqueue(inputTensors_, outputTensors_, stream);
+		return enqueue(inputTensors_, outputTensors_, weightTensors_, workspace, stream);
 	}
 
 	size_t TRTPlugin::getSerializationSize() {
@@ -255,7 +333,7 @@ namespace Plugin {
 	}
 
 	IPlugin* TRTBuilderPluginFactory::inferCreate(const std::string& layerName, const void* serialData, size_t serialLength) {
-		INFO("inferCreate %s", layerName.c_str());
+		//INFO("inferCreate %s", layerName.c_str());
 
 		auto instance = createPlugin(layerName);
 		instance->pluginInit(layerName, serialData, serialLength);
@@ -298,6 +376,47 @@ namespace Plugin {
 		return std::shared_ptr<nvinfer1::IPluginFactory>(new TRTBuilderPluginFactory());
 	}
 	/////////////////////////////////////////////////////////////////////////////////////////////
+	//编译FP16模型时：
+	//isPlugin: conv1
+	//isPlugin: batch_norm1
+	//isPlugin: bn_scale1
+	//...
+	//isPlugin: MyReLU -> true
+	//createPlugin: MyReLU
+	//builderCreate: MyReLU
+	//getNbOutputs
+	//getNbOutputs
+	//getNbOutputs
+	//getOutputDimensions
+	//Marked output blob 'myImage'.(3,1,1)
+	//Set max batch size: 4.
+	//Build engine
+	//supportsFormat 0, 0
+	//supportsFormat 1, 0
+	//supportsFormat 1, 1
+	//supportsFormat 1, 2
+	//如果存在half和float，那么engine会执行enqueue来选择合适的（高效的）格式。例如1080Ti上没有
+	//half的支持，因此他选择了float，调用了enqueue
+	//configureWithFormat: type: 0
+	//supportsFormat 0, 0
+	//enqueue
+	//enqueue
+	//configureWithFormat : type: 1
+	//supportsFormat 1, 0
+	//enqueue
+	//enqueue
+	//configureWithFormat : type: 0
+	//getWorkspaceSize
+	//getWorkspaceSize
+	//initialize
+	//getSerializationSize
+	//serialize
+	//terminate
+	//destroy TRTBuilderPluginFactory
+	//destroy manager
+	//destroy TRTPlugin
+
+
 	//编译FP32模型时：
 	//isPlugin: conv1
 	//isPlugin: batch_norm1

@@ -1,0 +1,86 @@
+I[2020-01-13 13:33:42:main.cpp:21]:Int8 量化
+I[2020-01-13 13:33:42:trt_builder.cpp:200]:Build INT8 trtmodel.
+I[2020-01-13 13:33:42:trt_builder.cpp:297]:Using plugin factory for build phase.
+I[2020-01-13 13:33:42:trt_builder.cpp:315]:Marked output blob 'fc_blob1'.
+I[2020-01-13 13:33:42:trt_builder.cpp:353]:Set max batch size: 4.
+I[2020-01-13 13:33:42:trt_builder.cpp:366]:Using image list[15 files]: models/int8data
+I[2020-01-13 13:33:42:trt_builder.cpp:374]:Build engine
+I[2020-01-13 13:33:46:main.cpp:17]:process: 1 / 15
+I[2020-01-13 13:33:46:main.cpp:17]:process: 2 / 15
+I[2020-01-13 13:33:46:main.cpp:17]:process: 3 / 15
+I[2020-01-13 13:33:46:main.cpp:17]:process: 4 / 15
+I[2020-01-13 13:33:46:main.cpp:17]:process: 5 / 15
+I[2020-01-13 13:33:46:main.cpp:17]:process: 6 / 15
+I[2020-01-13 13:33:46:main.cpp:17]:process: 7 / 15
+I[2020-01-13 13:33:46:main.cpp:17]:process: 8 / 15
+I[2020-01-13 13:33:46:main.cpp:17]:process: 9 / 15
+I[2020-01-13 13:33:46:main.cpp:17]:process: 10 / 15
+I[2020-01-13 13:33:46:main.cpp:17]:process: 11 / 15
+I[2020-01-13 13:33:46:main.cpp:17]:process: 12 / 15
+I[2020-01-13 13:33:46:main.cpp:17]:process: 13 / 15
+I[2020-01-13 13:33:47:main.cpp:17]:process: 14 / 15
+I[2020-01-13 13:33:47:main.cpp:17]:process: 15 / 15
+I[2020-01-13 13:34:02:trt_builder.cpp:389]:Save calibrator to: models/handmodel_resnet18.calibrator.txt
+I[2020-01-13 13:34:03:main.cpp:31]:Int8 Done
+I[2020-01-13 13:34:03:main.cpp:38]:onnx to trtmodel...
+I[2020-01-13 13:34:03:trt_builder.cpp:200]:Build FP32 trtmodel.
+I[2020-01-13 13:34:03:trt_builder.cpp:325]:Warning: ONNX has no pluginFactory support
+I[2020-01-13 13:34:03:trt_builder.cpp:353]:Set max batch size: 4.
+I[2020-01-13 13:34:03:trt_builder.cpp:374]:Build engine
+I[2020-01-13 13:34:31:main.cpp:44]:done.
+I[2020-01-13 13:34:31:main.cpp:46]:load model: models/efficientnet-b0.fp32.trtmodel
+I[2020-01-13 13:34:31:main.cpp:53]:forward...
+I[2020-01-13 13:34:31:main.cpp:76]:top 0: 88.42 %, giant panda, panda, panda bear, coon bear, Ailuropoda melanoleuca
+I[2020-01-13 13:34:31:main.cpp:76]:top 1: 0.47 %, lesser panda, red panda, panda, bear cat, cat bear, Ailurus fulgens
+I[2020-01-13 13:34:31:main.cpp:76]:top 2: 0.46 %, brown bear, bruin, Ursus arctos
+I[2020-01-13 13:34:31:main.cpp:76]:top 3: 0.17 %, American black bear, black bear, Ursus americanus, Euarctos americanus
+I[2020-01-13 13:34:31:main.cpp:76]:top 4: 0.15 %, sloth bear, Melursus ursinus, Ursus ursinus
+I[2020-01-13 13:34:31:main.cpp:79]:done.
+I[2020-01-13 13:34:31:main.cpp:103]:onnx to trtmodel...
+I[2020-01-13 13:34:31:trt_builder.cpp:200]:Build INT8 trtmodel.
+I[2020-01-13 13:34:31:trt_builder.cpp:325]:Warning: ONNX has no pluginFactory support
+I[2020-01-13 13:34:31:trt_builder.cpp:353]:Set max batch size: 4.
+I[2020-01-13 13:34:31:trt_builder.cpp:366]:Using image list[15 files]: models/int8data
+I[2020-01-13 13:34:31:trt_builder.cpp:374]:Build engine
+I[2020-01-13 13:34:46:trt_builder.cpp:35]:NVInfer WARNING: Total space of persistent layer space is 1844736 on host and 0 on device
+I[2020-01-13 13:34:46:main.cpp:89]:process: 1 / 15
+I[2020-01-13 13:34:48:main.cpp:89]:process: 2 / 15
+I[2020-01-13 13:34:49:main.cpp:89]:process: 3 / 15
+I[2020-01-13 13:34:50:main.cpp:89]:process: 4 / 15
+I[2020-01-13 13:34:52:main.cpp:89]:process: 5 / 15
+I[2020-01-13 13:34:53:main.cpp:89]:process: 6 / 15
+I[2020-01-13 13:34:54:main.cpp:89]:process: 7 / 15
+I[2020-01-13 13:34:55:main.cpp:89]:process: 8 / 15
+I[2020-01-13 13:34:56:main.cpp:89]:process: 9 / 15
+I[2020-01-13 13:34:58:main.cpp:89]:process: 10 / 15
+I[2020-01-13 13:34:59:main.cpp:89]:process: 11 / 15
+I[2020-01-13 13:35:00:main.cpp:89]:process: 12 / 15
+I[2020-01-13 13:35:01:main.cpp:89]:process: 13 / 15
+I[2020-01-13 13:35:02:main.cpp:89]:process: 14 / 15
+I[2020-01-13 13:35:04:main.cpp:89]:process: 15 / 15
+I[2020-01-13 13:36:45:trt_builder.cpp:389]:Save calibrator to: models/efficientnet-b0.calibrator.txt
+I[2020-01-13 13:36:45:main.cpp:112]:done.
+I[2020-01-13 13:36:45:main.cpp:114]:load model: models/efficientnet-b0.int8.trtmodel
+I[2020-01-13 13:36:45:main.cpp:121]:forward...
+I[2020-01-13 13:36:45:main.cpp:144]:top 0: 65.58 %, giant panda, panda, panda bear, coon bear, Ailuropoda melanoleuca
+I[2020-01-13 13:36:45:main.cpp:144]:top 1: 2.97 %, badger
+I[2020-01-13 13:36:45:main.cpp:144]:top 2: 2.33 %, hog, pig, grunter, squealer, Sus scrofa
+I[2020-01-13 13:36:45:main.cpp:144]:top 3: 1.98 %, wombat
+I[2020-01-13 13:36:45:main.cpp:144]:top 4: 1.97 %, American black bear, black bear, Ursus americanus, Euarctos americanus
+I[2020-01-13 13:36:45:main.cpp:147]:done.
+I[2020-01-13 13:36:45:main.cpp:165]:Plugin FP32 转换
+I[2020-01-13 13:36:45:trt_builder.cpp:200]:Build FP32 trtmodel.
+I[2020-01-13 13:36:45:trt_builder.cpp:297]:Using plugin factory for build phase.
+I[2020-01-13 13:36:46:plugin.cpp:328]:builderCreate WReLU1123
+I[2020-01-13 13:36:46:trt_builder.cpp:315]:Marked output blob 'myImage'.
+I[2020-01-13 13:36:46:trt_builder.cpp:353]:Set max batch size: 4.
+I[2020-01-13 13:36:46:trt_builder.cpp:374]:Build engine
+I[2020-01-13 13:36:46:plugin.cpp:158]:supportsFormat 0, 0
+I[2020-01-13 13:36:46:plugin.cpp:158]:supportsFormat 1, 0
+I[2020-01-13 13:36:46:plugin.cpp:158]:supportsFormat 1, 1
+I[2020-01-13 13:36:46:plugin.cpp:158]:supportsFormat 1, 2
+I[2020-01-13 13:36:46:plugin.cpp:167]:configureWithFormat: type: 0
+I[2020-01-13 13:36:46:main.cpp:170]:Plugin FP32 Done
+I[2020-01-13 13:36:46:main.cpp:172]:加载模型 models/demo.fp32.trtmodel
+I[2020-01-13 13:36:46:main.cpp:180]:Inference ...
+I[2020-01-13 13:36:46:main.cpp:187]:done
