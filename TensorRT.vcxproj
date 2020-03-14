@@ -13,7 +13,6 @@
   <ItemGroup>
     <ClCompile Include="src\builder\trt_builder.cpp" />
     <ClCompile Include="src\common\cc_util.cpp" />
-    <ClCompile Include="src\common\test_common.cpp" />
     <ClCompile Include="src\import_lib.cpp" />
     <ClCompile Include="src\infer\trt_infer.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -22,14 +21,21 @@
   <ItemGroup>
     <ClInclude Include="src\builder\trt_builder.hpp" />
     <ClInclude Include="src\common\cc_util.hpp" />
-    <ClInclude Include="src\common\test_common.hpp" />
     <ClInclude Include="src\infer\task_pool.hpp" />
     <ClInclude Include="src\infer\trt_infer.hpp" />
-    <ClInclude Include="src\plugin\plugins\WReLU.hpp" />
+    <ClInclude Include="src\plugin\plugins\TestPlugin.hpp" />
+    <ClInclude Include="src\plugin\plugins\ChannelMultiplicationLayer.hpp" />
+    <ClInclude Include="src\plugin\plugins\ClipLayer.hpp" />
+    <ClInclude Include="src\plugin\plugins\DCNLayer.hpp" />
+    <ClInclude Include="src\plugin\plugins\PlexShuffleLayer.hpp" />
     <ClInclude Include="src\plugin\plugin.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="src\plugin\plugins\WReLU.cu" />
+    <CudaCompile Include="src\plugin\plugins\TestPlugin.cu" />
+    <CudaCompile Include="src\plugin\plugins\ChannelMultiplicationLayer.cu" />
+    <CudaCompile Include="src\plugin\plugins\ClipLayer.cu" />
+    <CudaCompile Include="src\plugin\plugins\DCNLayer.cu" />
+    <CudaCompile Include="src\plugin\plugins\PlexShuffleLayer.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
