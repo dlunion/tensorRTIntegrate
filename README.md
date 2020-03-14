@@ -4,6 +4,7 @@
 ## 更新 2
 * 1、添加[AlphaPose](https://github.com/MVIG-SJTU/AlphaPose)和[CenterNet](https://github.com/xingyizhou/CenterNet)的Inference实现，里面包括了（ChannelMultiplication、Clip、DCN、PiexShuffle）几个插件的实现案例
 * 2、屏蔽一个代码，在tensorRT7.0时编译报错，final class
+* 3、完善ccutil的函数
 
 #### Alpha Pose和CenterNet，分别检测框和点
 ![image0](/workspace/person_draw.jpg)
