@@ -8,7 +8,7 @@
 using namespace cv;
 using namespace std;
 
-#define GPUID		2
+#define GPUID		0
 
 void softmax(float* ptr, int count) {
 
