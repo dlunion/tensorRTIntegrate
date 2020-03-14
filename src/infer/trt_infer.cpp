@@ -35,7 +35,7 @@ public:
 			INFO("NVInfer ERROR: %s", msg);
 		}
 		else  if (severity == Severity::kWARNING) {
-			INFO("NVInfer WARNING: %s", msg);
+			//INFO("NVInfer WARNING: %s", msg);
 		}
 	}
 }gLogger;
@@ -63,7 +63,7 @@ namespace TRTInfer {
 
 	Tensor::Tensor(int ndims, const int* dims, DataType dtType) {
 
-		//×î¶àÖ§³Ö4Î¬µÄ¹¹½¨
+		//ï¿½ï¿½ï¿½Ö§ï¿½ï¿½4Î¬ï¿½Ä¹ï¿½ï¿½ï¿½
 		Assert(ndims <= 4 && ndims > 0);
 
 		int n = ndims > 0 ? dims[0] : 1;
@@ -79,7 +79,7 @@ namespace TRTInfer {
 	void Tensor::release() {
 		if (host_) {
 			free(host_);
-			host_ = nullptr;  //hostÎªnullptrºÍÆäËûµØÖ·ÓÐÊ²Ã´Çø±ð
+			host_ = nullptr;  //hostÎªnullptrï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½Ê²Ã´ï¿½ï¿½ï¿½ï¿½
 		}
 
 		if (device_) {
@@ -145,7 +145,7 @@ namespace TRTInfer {
 
 	void Tensor::resize(int ndims, const int* dims) {
 
-		//×î¶àÖ§³Ö4Î¬µÄ¹¹½¨
+		//ï¿½ï¿½ï¿½Ö§ï¿½ï¿½4Î¬ï¿½Ä¹ï¿½ï¿½ï¿½
 		Assert(ndims <= 4 && ndims > 0);
 
 		int n = ndims > 0 ? dims[0] : 1;
@@ -202,8 +202,8 @@ namespace TRTInfer {
 				for (int a2 = 0; a2 < dims[axis2]; ++a2)
 					for (int a3 = 0; a3 < dims[axis3]; ++a3) {
 						//tptr[a0 * t.count(1) + a1 * t.count(2) + a2 * t.count(3) + a3] = sptr[a0 * muls[axis0] + a1 * muls[axis1] + a2 * muls[axis2] + a3 * muls[axis3]];
-						size_t offsetTPtr = (a0 * t.count(1) + a1 * t.count(2) + a2 * t.count(3) + a3) * esize;
-						size_t offsetSPtr = (a0 * muls[axis0] + a1 * muls[axis1] + a2 * muls[axis2] + a3 * muls[axis3]) * esize;
+						size_t offsetTPtr = a0 * t.count(1) + a1 * t.count(2) + a2 * t.count(3) + a3;
+						size_t offsetSPtr = a0 * muls[axis0] + a1 * muls[axis1] + a2 * muls[axis2] + a3 * muls[axis3];
 						memcpy((char*)tptr + offsetTPtr, (char*)sptr + offsetSPtr, esize);
 					}
 			}
@@ -542,7 +542,7 @@ namespace TRTInfer {
 
 			auto dims = context->engine_->getBindingDimensions(i);
 			//auto dtType = context->engine_->getBindingDataType(i);
-			//ÕâÀïµÄdtTypeÊÇfloat
+			//ï¿½ï¿½ï¿½ï¿½ï¿½dtTypeï¿½ï¿½float
 			Assert(dims.nbDims <= 4);
 
 			int newDims[] = {1, 1, 1, 1};
@@ -566,7 +566,7 @@ namespace TRTInfer {
 
 	void EngineImpl::forward() {
 
-		//¼ì²éinputÊÇ·ñºÏÀí
+		//ï¿½ï¿½ï¿½inputï¿½Ç·ï¿½ï¿½ï¿½ï¿½
 		EngineContext* context = (EngineContext*)this->context_.get();
 		int inputBatchSize = inputs_[0]->num();
 		Assert(inputBatchSize <= context->engine_->getMaxBatchSize());
@@ -574,7 +574,7 @@ namespace TRTInfer {
 		for (int i = 0; i < outputs_.size(); ++i) 
 			outputs_[i]->resize(inputBatchSize);
 
-		//Êý¾ÝËÍµ½gpu
+		//ï¿½ï¿½ï¿½ï¿½ï¿½Íµï¿½gpu
 		vector<void*> bindings;
 		for (int i = 0; i < orderdBlobs_.size(); ++i)
 			bindings.push_back(orderdBlobs_[i]->gpu());

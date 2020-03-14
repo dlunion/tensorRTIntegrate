@@ -10,8 +10,6 @@
 #include <opencv2/opencv.hpp>
 #include <cuda_fp16.h>
 
-//ÎªÁË±ÜÃâ¶ÔPluginµÄÒıÓÃ£¬ÔÚinferenceÊ±Ä¬ÈÏÃ»ÓĞ²å¼ş£¬¸´ÖÆhppºÍcpp¼´¿É¸É»î£¬ËùÒÔ¶¨ÒåÁËÕâ¸öºê£¬µ±Ê¹ÓÃ²å¼şÊ±´ò¿ª¼´¿É
-//¸Ãºê¶¨ÒåÖ»ÊÇÔÚ·´ĞòÁĞ»¯Ä£ĞÍÖ®Ç°¶ÔpluginFactory×öÁË¸³Öµ£¬Ã»ÓĞÆäËûµØ·½ÔÙÓĞÒıÓÃÁË
 #define HAS_PLUGIN
 
 namespace TRTInfer {
@@ -36,8 +34,6 @@ namespace TRTInfer {
 		}
 	}
 
-	//TensorÀà£¬¶ÔÕÅÁ¿µÄ·â×°£¬¶ÔGPU¡¢CPU½»»¥²Ù×÷×öÁË·â×°
-	//Ê¹ÓÃÕßÖ»ĞèÒª¹ØĞÄÊı¾İÈçºÎÊäÈëÒÔ¼°ÈçºÎ´¦Àí£¬¶øÎŞĞè¹ØĞÄÊı¾İÓ¦¸ÃÕâÃ´¸´ÖÆµ½GPUÒÔ¼°ºÎÊ±¸´ÖÆµ½CPU
 	class Tensor {
 	public:
 		Tensor();
@@ -73,10 +69,6 @@ namespace TRTInfer {
 		size_t count(int start_axis = 0) const;
 		void print();
 
-		/* µ½gpu
-		* copyedIfCPU = true£¬Èç¹ûÊı¾İÔÚcpuÉÏ£¬Ôò¸´ÖÆµ½gpu£¬²¢ĞŞ¸ÄheadÎªInGPU
-		* copyedIfCPU = false£¬ÎŞÂÛÊı¾İ¼¯ÊÇ·ñÔÚcpuÉÏ£¬¶¼ÎŞÊÓ£¬²¢ĞŞ¸ÄheadÎªInGPU
-		* Èç¹ûgpuÃ»ÓĞ·ÖÅä¿Õ¼ä£¬Êı¾İÓÖÔÚcpuÉÏÊ±£¬»áÎªgpu·ÖÅä¿Õ¼ä*/
 		void toGPU(bool copyedIfCPU = true);
 		void toCPU(bool copyedIfGPU = true);
 		void toHalf();
@@ -96,12 +88,12 @@ namespace TRTInfer {
 		template<typename DataT> inline float& at(int n = 0, int c = 0, int h = 0, int w = 0) { return *(cpu<DataT>() + offset(n, c, h, w)); }
 		template<typename DataT> inline cv::Mat at(int n = 0, int c = 0) { return cv::Mat(height_, width_, CV_32F, cpu<DataT>(n, c)); }
 
-		/* ÉèÖÃÍ¼Ïñ£¬Èç¹ûÍ¼Ïñ´óĞ¡²»Ò»ÖÂ»áresize£¬Í¨µÀÊı¡¢¿í¸ß¡¢ÀàĞÍCV_32FÒªÇó±ØĞëÆ¥Åä£¬
-		* ·ñÔò±¨´í£¬²»»á¶ÔÊıÖµ×öÈÎºÎ²Ù×÷£¨ÀıÈç¹éÒ»»¯¡¢Ëõ·Å£©*/
+		/* ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ï¿½ï¿½Ğ¡ï¿½ï¿½Ò»ï¿½Â»ï¿½resizeï¿½ï¿½Í¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß¡ï¿½ï¿½ï¿½ï¿½ï¿½CV_32FÒªï¿½ï¿½ï¿½ï¿½ï¿½Æ¥ï¿½ä£¬
+		* ï¿½ï¿½ï¿½ò±¨´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ÎºÎ²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å£ï¿½*/
 		void setMat(int n, const cv::Mat& image);
 
-		/* ÉèÖÃÍ¼Ïñ£¬result = (image[c] / 255 - mean[c]) / std[c]
-		* ÒªÇóÍ¼ÏñÍ¨µÀÒ»ÖÂ£¬²»ÒªÇóÆäËû¸ñÊ½*/
+		/* ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ï¿½result = (image[c] / 255 - mean[c]) / std[c]
+		* Òªï¿½ï¿½Í¼ï¿½ï¿½Í¨ï¿½ï¿½Ò»ï¿½Â£ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê½*/
 		void setNormMat(int n, const cv::Mat& image, float mean[3], float std[3]);
 
 		//result = (image - mean) * scale
@@ -120,8 +112,6 @@ namespace TRTInfer {
 		DataType dtType_ = DataType::dtFloat;
 	};
 
-	//TensorRTµÄinference·â×°ÎªEngine¶ÔÏó£¬ÔÊĞíÖ±½Ó¼ÓÔØÄ£ĞÍ£¬Í¨¹ıTensorÀ´²Ù×÷ÊäÈëºÍÊä³ö£¬Ò²ÔÊĞí¶Ôinput(0)×öresize(batch)ÊµÏÖ¶àbatchµÄÊäÈë
-	//forwardÊ±»á×Ô¶¯¶Ôoutput×öresize£¬Ê¹µÃÆänumÎ¬¶ÈÒ»ÖÂ
 	class Engine {
 	public:
 		virtual bool load(const std::string& file) = 0;
@@ -131,8 +121,6 @@ namespace TRTInfer {
 
 		virtual std::shared_ptr<Tensor> input(int index = 0) = 0;
 		virtual std::shared_ptr<Tensor> output(int index = 0) = 0;
-
-		/* ¸ù¾İÃû×Ö»ñÈ¡tensorÖ¸Õë£¬¸Ãtensor¿ÉÄÜÊÇÊäÈëÒ²¿ÉÄÜÊÇÊä³ö£¬°üÀ¨ÇÒ½ö°üÀ¨¹¹½¨Ä£ĞÍÊ±µÄinputºÍmarkedOutputÖ¸¶¨µÄTensor*/
 		virtual std::shared_ptr<Tensor> tensor(const std::string& name) = 0;
 	};
 

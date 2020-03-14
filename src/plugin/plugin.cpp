@@ -121,8 +121,8 @@ namespace Plugin {
 
 		Assert(nbWeights == weights_.size());
 		for (int i = 0; i < nbWeights; ++i) {
-			//weightsÓ¦¸ÃÔÚconfigµÄÊ±ºò¾ÍÒÑ¾­Ö¸¶¨ÁË£¬ÕâÀïÒªÇóÊýÁ¿ÊÇÒ»ÖÂµÄ
-			Assert(weights[i].type == nvinfer1::DataType::kFLOAT);	//ÕâÀïÒªÇóÈ¨ÖØÀàÐÍ±ØÐëÊÇfp32£¬Ä¬ÈÏ¶¨ÒåµÄ
+			//weightsÓ¦ï¿½ï¿½ï¿½ï¿½configï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½Ñ¾ï¿½Ö¸ï¿½ï¿½ï¿½Ë£ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½Âµï¿½
+			Assert(weights[i].type == nvinfer1::DataType::kFLOAT);	//ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½È¨ï¿½ï¿½ï¿½ï¿½ï¿½Í±ï¿½ï¿½ï¿½ï¿½ï¿½fp32ï¿½ï¿½Ä¬ï¿½Ï¶ï¿½ï¿½ï¿½ï¿½
 			Assert(weights_[i] != nullptr && weights_[i]->count() == weights[i].count);
 			memcpy(weights_[i]->cpu(), weights[i].values, weights_[i]->bytes());
 		}
@@ -192,10 +192,6 @@ namespace Plugin {
 		auto dims = outputDims(index, inputs, nbInputDims);
 		config_->output[index] = dims;
 		return dims;
-	}
-
-	void TRTPlugin::configure(const nvinfer1::Dims* inputDims, int nbInputs, const nvinfer1::Dims* outputDims, int nbOutputs, int maxBatchSize) {
-		//INFO("configure ");
 	}
 
 	int TRTPlugin::initialize() {
@@ -301,24 +297,24 @@ namespace Plugin {
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//Èç¹ûÄÜÕÒµ½²å¼þ£¬ÔòËµÃ÷Ö§³ÖËû
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ëµï¿½ï¿½Ö§ï¿½ï¿½ï¿½ï¿½
 	bool TRTBuilderPluginFactory::support(const std::string& layerName) {
 		return getPluginRegistry()->findPlugin(layerName) != nullptr;
 	}
 
-	//¸ù¾ÝlayerName´´½¨²å¼þ
+	//ï¿½ï¿½ï¿½ï¿½layerNameï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	shared_ptr<TRTPlugin> TRTBuilderPluginFactory::createPlugin(const std::string& layerName) {
 
-		//Í¨¹ýÃû×Ö²éÕÒÖ§³ÖµÄ²å¼þÐÅÏ¢
+		//Í¨ï¿½ï¿½ï¿½ï¿½ï¿½Ö²ï¿½ï¿½ï¿½Ö§ï¿½ÖµÄ²ï¿½ï¿½ï¿½ï¿½Ï¢
 		auto pluginInfo = getPluginRegistry()->findPlugin(layerName);
 
-		//Èç¹ûÕÒ²»µ½¾Í±¨´í£¬ÒòÎªsupportµÄ·µ»Ø¸úÕâ¸öº¯ÊýÓÃµÄÍ¬Ò»¸ö£¬²»Ó¦¸ÃÕÒ²»µ½
+		//ï¿½ï¿½ï¿½ï¿½Ò²ï¿½ï¿½ï¿½ï¿½Í±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªsupportï¿½Ä·ï¿½ï¿½Ø¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ãµï¿½Í¬Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½Ò²ï¿½ï¿½ï¿½
 		if (pluginInfo == nullptr) {
 			INFO("layer '%s' unsupport.", layerName.c_str());
 		}
 		Assert(pluginInfo != nullptr);
 
-		//Ö´ÐÐ´´½¨²¢Ìí¼Óµ½¼ÇÂ¼±íÖÐÈ¥
+		//Ö´ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½È¥
 		auto pluginInstance = pluginInfo->creater();
 		plugins_.push_back(pluginInstance);
 		return pluginInstance;
@@ -376,7 +372,7 @@ namespace Plugin {
 		return std::shared_ptr<nvinfer1::IPluginFactory>(new TRTBuilderPluginFactory());
 	}
 	/////////////////////////////////////////////////////////////////////////////////////////////
-	//±àÒëFP16Ä£ÐÍÊ±£º
+	//ï¿½ï¿½ï¿½ï¿½FP16Ä£ï¿½ï¿½Ê±ï¿½ï¿½
 	//isPlugin: conv1
 	//isPlugin: batch_norm1
 	//isPlugin: bn_scale1
@@ -395,8 +391,8 @@ namespace Plugin {
 	//supportsFormat 1, 0
 	//supportsFormat 1, 1
 	//supportsFormat 1, 2
-	//Èç¹û´æÔÚhalfºÍfloat£¬ÄÇÃ´engine»áÖ´ÐÐenqueueÀ´Ñ¡ÔñºÏÊÊµÄ£¨¸ßÐ§µÄ£©¸ñÊ½¡£ÀýÈç1080TiÉÏÃ»ÓÐ
-	//halfµÄÖ§³Ö£¬Òò´ËËûÑ¡ÔñÁËfloat£¬µ÷ÓÃÁËenqueue
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½halfï¿½ï¿½floatï¿½ï¿½ï¿½ï¿½Ã´engineï¿½ï¿½Ö´ï¿½ï¿½enqueueï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½ÊµÄ£ï¿½ï¿½ï¿½Ð§ï¿½Ä£ï¿½ï¿½ï¿½Ê½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½1080Tiï¿½ï¿½Ã»ï¿½ï¿½
+	//halfï¿½ï¿½Ö§ï¿½Ö£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½floatï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½enqueue
 	//configureWithFormat: type: 0
 	//supportsFormat 0, 0
 	//enqueue
@@ -417,7 +413,7 @@ namespace Plugin {
 	//destroy TRTPlugin
 
 
-	//±àÒëFP32Ä£ÐÍÊ±£º
+	//ï¿½ï¿½ï¿½ï¿½FP32Ä£ï¿½ï¿½Ê±ï¿½ï¿½
 	//isPlugin: conv1
 	//isPlugin: batch_norm1
 	//isPlugin: bn_scale1
@@ -448,7 +444,7 @@ namespace Plugin {
 	//destroy TRTPlugin
 
 
-	//±àÒëINT8Ä£ÐÍÊ±£º
+	//ï¿½ï¿½ï¿½ï¿½INT8Ä£ï¿½ï¿½Ê±ï¿½ï¿½
 	//isPlugin: conv1
 	//isPlugin: batch_norm1
 	//isPlugin: bn_scale1
@@ -492,7 +488,7 @@ namespace Plugin {
 	//destroy TRTPlugin
 
 
-	//InferenceµÄÊ±ºò
+	//Inferenceï¿½ï¿½Ê±ï¿½ï¿½
 	//createPlugin: MyReLU
 	//inferCreate: MyReLU
 	//initialize

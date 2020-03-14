@@ -10,10 +10,10 @@
 #include <cuda_runtime.h>
 #include <set>
 #include <infer/trt_infer.hpp>
+#include <NvInferRuntimeCommon.h>
 
 namespace Plugin {
 
-	//¶¨ÒåblockÄÚÏß³ÌÊý£¬Èç¹ûÏÔ¿¨ÐÔÄÜ½Ï²î£¬ÐèÒªµ÷Õû¸üµÍÒ»Ð©
 #define GPU_BLOCK_THREADS  512
 #define KERNEL_POSITION											\
 	int position = (blockDim.x * blockIdx.x + threadIdx.x);		\
@@ -51,20 +51,20 @@ namespace Plugin {
 	struct LayerConfig {
 
 		///////////////////////////////////
-		//¿ÉÒÔÐÞ¸ÄµÄÅäÖÃ
+		//ï¿½ï¿½ï¿½ï¿½ï¿½Þ¸Äµï¿½ï¿½ï¿½ï¿½ï¿½
 		int nbOutput_ = 1;
 		size_t workspaceSize_ = 0;
 		std::set<nvinfer1::DataType> supportDataType_;
 		std::set<nvinfer1::PluginFormat> supportPluginFormat_;
 
-		//configÊ±Çë¹¹ÔìÈ¨ÖØÏà¹ØÐÅÏ¢ºÍÅäÖÃ£¬¸´ÖÆÈ¨ÖØÈç¹û·¢ÏÖcount²»Æ¥ÅäÊ±»á±¨´í
+		//configÊ±ï¿½ë¹¹ï¿½ï¿½È¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã£ï¿½ï¿½ï¿½ï¿½ï¿½È¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½countï¿½ï¿½Æ¥ï¿½ï¿½Ê±ï¿½á±¨ï¿½ï¿½
 		std::vector<std::shared_ptr<TRTInfer::Tensor>> weights_;
 		TRTInfer::DataType configDataType_;
 		nvinfer1::PluginFormat configPluginFormat_;
 		int configMaxbatchSize_ = 0;		
 
 		///////////////////////////////////
-		//×Ô¶¯¸³ÖµµÄÅäÖÃ
+		//ï¿½Ô¶ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		std::vector<nvinfer1::Dims> input;
 		std::vector<nvinfer1::Dims> output;
 		std::string serializeData_;
@@ -88,7 +88,7 @@ namespace Plugin {
 		void pluginInit(const std::string& name, const nvinfer1::Weights* weights, int nbWeights);
 		void pluginInit(const std::string& name, const void* serialData, size_t serialLength);
 
-		//Èç¹ûÓÐÈ¨ÖØ£¬Çë¶Ô·µ»ØµÄconfigÊµÀýÖÐµÄweights×ö³õÊ¼»¯shape
+		//ï¿½ï¿½ï¿½ï¿½ï¿½È¨ï¿½Ø£ï¿½ï¿½ï¿½Ô·ï¿½ï¿½Øµï¿½configÊµï¿½ï¿½ï¿½Ðµï¿½weightsï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½shape
 		virtual std::shared_ptr<LayerConfig> config(const std::string& layerName);
 		virtual bool supportsFormat(nvinfer1::DataType type, nvinfer1::PluginFormat format) const;
 		virtual void configureWithFormat(
@@ -96,7 +96,6 @@ namespace Plugin {
 			int nbOutputs, nvinfer1::DataType type, nvinfer1::PluginFormat format, int maxBatchSize);
 		virtual int getNbOutputs() const;
 		virtual nvinfer1::Dims getOutputDimensions(int index, const nvinfer1::Dims* inputs, int nbInputDims);
-		virtual void configure(const nvinfer1::Dims* inputDims, int nbInputs, const nvinfer1::Dims* outputDims, int nbOutputs, int maxBatchSize);
 		virtual int initialize();
 		virtual void terminate();
 		virtual size_t getWorkspaceSize(int maxBatchSize) const override;
@@ -149,17 +148,17 @@ namespace Plugin {
 	class TRTBuilderPluginFactory : public nvcaffeparser1::IPluginFactoryExt, public nvinfer1::IPluginFactory {
 
 	public:
-		//trtµÄÖØÔØº¯Êý
+		//trtï¿½ï¿½ï¿½ï¿½ï¿½Øºï¿½ï¿½ï¿½
 		virtual bool isPluginExt(const char* layerName) override;
 		virtual bool isPlugin(const char* layerName) override;
 		virtual nvinfer1::IPlugin* createPlugin(const char* layerName, const nvinfer1::Weights* weights, int nbWeights) override;
 		virtual nvinfer1::IPlugin* createPlugin(const char* layerName, const void* serialData, size_t serialLength) override;
 
 
-		//Èç¹ûÄÜÕÒµ½²å¼þ£¬ÔòËµÃ÷Ö§³ÖËû
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ëµï¿½ï¿½Ö§ï¿½ï¿½ï¿½ï¿½
 		virtual bool support(const std::string& layerName);
 
-		//¸ù¾ÝlayerName´´½¨²å¼þ
+		//ï¿½ï¿½ï¿½ï¿½layerNameï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		virtual std::shared_ptr<TRTPlugin> createPlugin(const std::string& layerName);
 		virtual nvinfer1::IPlugin* builderCreate(const std::string& layerName, const nvinfer1::Weights* weights, int nbWeights);
 		virtual nvinfer1::IPlugin* inferCreate(const std::string& layerName, const void* serialData, size_t serialLength);

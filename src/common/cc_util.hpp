@@ -14,7 +14,7 @@
 #include <mutex>
 #include <opencv2/opencv.hpp>
 
-#define CCUtilVersion  "1.0.0"
+#define CCUtilVersion  "1.0.1"
 
 namespace ccutil{
 
