@@ -13,14 +13,17 @@
   <ItemGroup>
     <ClCompile Include="src\builder\trt_builder.cpp" />
     <ClCompile Include="src\common\cc_util.cpp" />
+    <ClCompile Include="src\common\json.cpp" />
     <ClCompile Include="src\import_lib.cpp" />
     <ClCompile Include="src\infer\trt_infer.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\old_test.cpp" />
     <ClCompile Include="src\plugin\plugin.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\builder\trt_builder.hpp" />
     <ClInclude Include="src\common\cc_util.hpp" />
+    <ClInclude Include="src\common\json.hpp" />
     <ClInclude Include="src\infer\task_pool.hpp" />
     <ClInclude Include="src\infer\trt_infer.hpp" />
     <ClInclude Include="src\plugin\plugins\TestPlugin.hpp" />
@@ -97,6 +100,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <OpenMPSupport>false</OpenMPSupport>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -119,6 +123,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <OpenMPSupport>false</OpenMPSupport>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

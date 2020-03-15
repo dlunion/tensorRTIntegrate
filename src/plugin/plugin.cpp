@@ -155,7 +155,7 @@ namespace Plugin {
 	}
 
 	bool TRTPlugin::supportsFormat(nvinfer1::DataType type, nvinfer1::PluginFormat format) const {
-		INFO("supportsFormat %d, %d", type, format);
+		//INFO("supportsFormat %d, %d", type, format);
 		return config_->supportDataType_.find(type) != config_->supportDataType_.end() &&
 			config_->supportPluginFormat_.find(format) != config_->supportPluginFormat_.end();
 	}

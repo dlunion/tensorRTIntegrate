@@ -31,7 +31,6 @@ nvinfer1::Dims TestPlugin::outputDims(int index, const nvinfer1::Dims* inputDims
 std::shared_ptr<LayerConfig> TestPlugin::config(const std::string& layerName) {
 	auto cfg = TRTPlugin::config(layerName);
 
-	//定义我们这个插件支持half和float格式
 	cfg->supportDataType_ = {nvinfer1::DataType::kHALF, nvinfer1::DataType::kFLOAT};
 	//cfg->supportDataType_ = {nvinfer1::DataType::kHALF};
 	return cfg;
@@ -46,8 +45,6 @@ int TestPlugin::enqueue(const std::vector<Plugin::GTensor>& inputs, std::vector<
 	if (config_->configDataType_ == TRTInfer::DataType::dtFloat) {
 		MyPluginKenel <float> <<<grid, block >>> (inputs[0].ptr<float>(), outputs[0].ptr<float>(), count);
 	}
-
-	//如果定义的是half的情况下，调用half的方法，效率会比较高，还有half2，如果转换为half2，则有更高的加速
 	else if (config_->configDataType_ == TRTInfer::DataType::dtHalfloat) {
 		MyPluginKenel <halfloat> <<<grid, block>>> (inputs[0].ptr<halfloat>(), outputs[0].ptr<halfloat>(), count);
 	}

@@ -217,7 +217,6 @@ void testPlugin() {
 }
 
 int main_old_test() {
-	//log保存为文件
 	ccutil::setLoggerSaveDirectory("logs");
 	TRTBuilder::setDevice(GPUID);
 

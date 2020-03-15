@@ -34,14 +34,17 @@
     <ClCompile Include="src\infer\trt_infer.cpp">
       <Filter>src\infer</Filter>
     </ClCompile>
-    <ClCompile Include="src\common\test_common.cpp">
-      <Filter>src\common</Filter>
-    </ClCompile>
     <ClCompile Include="src\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\plugin\plugin.cpp">
       <Filter>src\plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="src\common\json.cpp">
+      <Filter>src\common</Filter>
+    </ClCompile>
+    <ClCompile Include="src\old_test.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -54,21 +57,45 @@
     <ClInclude Include="src\infer\trt_infer.hpp">
       <Filter>src\infer</Filter>
     </ClInclude>
-    <ClInclude Include="src\common\test_common.hpp">
-      <Filter>src\common</Filter>
-    </ClInclude>
     <ClInclude Include="src\infer\task_pool.hpp">
       <Filter>src\infer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\plugin\plugins\WReLU.hpp">
-      <Filter>src\plugin\plugins</Filter>
     </ClInclude>
     <ClInclude Include="src\plugin\plugin.hpp">
       <Filter>src\plugin</Filter>
     </ClInclude>
+    <ClInclude Include="src\plugin\plugins\ChannelMultiplicationLayer.hpp">
+      <Filter>src\plugin\plugins</Filter>
+    </ClInclude>
+    <ClInclude Include="src\plugin\plugins\ClipLayer.hpp">
+      <Filter>src\plugin\plugins</Filter>
+    </ClInclude>
+    <ClInclude Include="src\plugin\plugins\DCNLayer.hpp">
+      <Filter>src\plugin\plugins</Filter>
+    </ClInclude>
+    <ClInclude Include="src\plugin\plugins\PlexShuffleLayer.hpp">
+      <Filter>src\plugin\plugins</Filter>
+    </ClInclude>
+    <ClInclude Include="src\plugin\plugins\TestPlugin.hpp">
+      <Filter>src\plugin\plugins</Filter>
+    </ClInclude>
+    <ClInclude Include="src\common\json.hpp">
+      <Filter>src\common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="src\plugin\plugins\WReLU.cu">
+    <CudaCompile Include="src\plugin\plugins\ChannelMultiplicationLayer.cu">
+      <Filter>src\plugin\plugins</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\plugin\plugins\ClipLayer.cu">
+      <Filter>src\plugin\plugins</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\plugin\plugins\DCNLayer.cu">
+      <Filter>src\plugin\plugins</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\plugin\plugins\PlexShuffleLayer.cu">
+      <Filter>src\plugin\plugins</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\plugin\plugins\TestPlugin.cu">
       <Filter>src\plugin\plugins</Filter>
     </CudaCompile>
   </ItemGroup>
