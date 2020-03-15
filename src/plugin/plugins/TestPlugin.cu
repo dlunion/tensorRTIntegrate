@@ -44,12 +44,12 @@ int TestPlugin::enqueue(const std::vector<Plugin::GTensor>& inputs, std::vector<
 	auto block = blockDims(count);
 
 	if (config_->configDataType_ == TRTInfer::DataType::dtFloat) {
-		MyPluginKenel <<<grid, block >>> (inputs[0].ptr<float>(), outputs[0].ptr<float>(), count);
+		MyPluginKenel <float> <<<grid, block >>> (inputs[0].ptr<float>(), outputs[0].ptr<float>(), count);
 	}
 
 	//如果定义的是half的情况下，调用half的方法，效率会比较高，还有half2，如果转换为half2，则有更高的加速
 	else if (config_->configDataType_ == TRTInfer::DataType::dtHalfloat) {
-		MyPluginKenel <<<grid, block>>> (inputs[0].ptr<halfloat>(), outputs[0].ptr<halfloat>(), count);
+		MyPluginKenel <halfloat> <<<grid, block>>> (inputs[0].ptr<halfloat>(), outputs[0].ptr<halfloat>(), count);
 	}
 	return 0;
 }
