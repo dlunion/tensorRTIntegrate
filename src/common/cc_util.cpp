@@ -1028,7 +1028,7 @@ namespace ccutil{
 		if (p > l)
 			return path.substr(0, p + 1) + newSuffix;
 
-		//Ã»ÓĞ.µÄÎÄ¼ş£¬Ö»ÊÇÔÚÎ²°Í¼Óºó×º£¬ÕâÖÖÓĞµãÊÇÔÚÂ·¾¶ÉÏµÄµã¶ø²»ÊÇÎÄ¼şÃûµÄµã
+		//æ²¡æœ‰.çš„æ–‡ä»¶ï¼Œåªæ˜¯åœ¨å°¾å·´åŠ åç¼€ï¼Œè¿™ç§æœ‰ç‚¹æ˜¯åœ¨è·¯å¾„ä¸Šçš„ç‚¹è€Œä¸æ˜¯æ–‡ä»¶åçš„ç‚¹
 		return path + "." + newSuffix;
 	}
 
@@ -1288,7 +1288,7 @@ namespace ccutil{
 #ifdef U_OS_WINDOWS
 			if (*iter_ptr == '/' || *iter_ptr == '\\' || *iter_ptr == 0){
 #else
-			if (*iter_ptr == '/' || *iter_ptr == 0){
+			if (*iter_ptr == '/' && iter_ptr != dir_ptr || *iter_ptr == 0){
 #endif
 				char old = *iter_ptr;
 				*iter_ptr = 0;
@@ -1501,11 +1501,11 @@ namespace ccutil{
 		cv::Mat w = m;
 
 		if (m.isSubmatrix()){
-			//Èç¹ûÊÇ×Ó¾ØÕó£¬Ôò¿ËÂ¡Ò»¸ö
+			//å¦‚æœæ˜¯å­çŸ©é˜µï¼Œåˆ™å…‹éš†ä¸€ä¸ª
 			w = m.clone();
 		}
 		else if (m.dims == 2){
-			//Èç¹ûÊÇÍ¼ÏñÄÇÑù´æÔÚ¶ÔÆëÊı¾İµÄ¶şÎ¬¾ØÕó£¬ÄÇÃ´»áÓÉÓÚ¶ÔÆë£¬Ò²ĞèÒªcloneÒ»¸ö
+			//å¦‚æœæ˜¯å›¾åƒé‚£æ ·å­˜åœ¨å¯¹é½æ•°æ®çš„äºŒç»´çŸ©é˜µï¼Œé‚£ä¹ˆä¼šç”±äºå¯¹é½ï¼Œä¹Ÿéœ€è¦cloneä¸€ä¸ª
 			if (m.step.p[1] * m.size[1] != m.step.p[0])
 				w = m.clone();
 		}
@@ -1552,7 +1552,7 @@ namespace ccutil{
 	} GUID;
 #endif
 
-	//·µ»Ø32Î»µÄ´óĞ´×ÖÄ¸µÄuuid
+	//è¿”å›32ä½çš„å¤§å†™å­—æ¯çš„uuid
 	string uuid(){
 
 #if defined(HAS_UUID)
@@ -1639,7 +1639,7 @@ namespace ccutil{
 
 		readModeEndSEEK_ = 0;
 		if (hasReadMode && f_ != nullptr){
-			//»ñÈ¡ËûµÄend
+			//è·å–ä»–çš„end
 			fseek(f_, 0, SEEK_END);
 			readModeEndSEEK_ = ftell(f_);
 			fseek(f_, 0, SEEK_SET);
@@ -1831,7 +1831,7 @@ namespace ccutil{
 
 
 	//////////////////////////////////////////////////////////////////////////
-	//Îª0Ê±£¬²»cache£¬Îª-1Ê±£¬ËùÓĞ¶¼cache
+	//ä¸º0æ—¶ï¼Œä¸cacheï¼Œä¸º-1æ—¶ï¼Œæ‰€æœ‰éƒ½cache
 	FileCache::FileCache(int maxCacheSize){
 		maxCacheSize_ = maxCacheSize;
 	}
@@ -2223,7 +2223,7 @@ namespace ccutil{
 		LoggerListener logger_listener = nullptr;
 		volatile bool has_logger = true;
 		FILE* handler = nullptr;
-		size_t lines = 0;		//ÈÕÖ¾³¤¶È¼ÆÊı
+		size_t lines = 0;		//æ—¥å¿—é•¿åº¦è®¡æ•°
 
 		void setLoggerSaveDirectory(const string& loggerDirectory) {
 
@@ -2233,7 +2233,7 @@ namespace ccutil{
 
 			std::unique_lock<mutex> l(logger_lock_);
 			if (handler != nullptr){
-				//¶ÔÓÚÒÑ¾­´ò¿ªµÄÎÄ¼ş£¬±ØĞë¹Ø±Õ£¬Èç¹ûÒªĞŞ¸ÄÄ¿Â¼µÄ»°
+				//å¯¹äºå·²ç»æ‰“å¼€çš„æ–‡ä»¶ï¼Œå¿…é¡»å…³é—­ï¼Œå¦‚æœè¦ä¿®æ”¹ç›®å½•çš„è¯
 				fclose(handler);
 				handler = nullptr;
 			}
@@ -2292,7 +2292,7 @@ namespace ccutil{
 	void __log_func(const char* file, int line, int level, const char* fmt, ...) {
 
 		if (__g_logger.logger_listener != nullptr){
-			//Èç¹û·µ»Øfalse£¬ÔòÖ±½Ó·µ»Ø£¬·µ»Øtrue²Å»áĞ´ÈëÈÕÖ¾ÏµÍ³
+			//å¦‚æœè¿”å›falseï¼Œåˆ™ç›´æ¥è¿”å›ï¼Œè¿”å›trueæ‰ä¼šå†™å…¥æ—¥å¿—ç³»ç»Ÿ
 			char buffer[10000];
 			va_list vl;
 			va_start(vl, fmt);
@@ -2338,12 +2338,12 @@ namespace ccutil{
 				__g_logger.lines++;
 				
 				if (__g_logger.lines % 100 == 0){
-					//Ã¿10ĞĞĞ´Èëµ½Ó²ÅÌ
+					//æ¯10è¡Œå†™å…¥åˆ°ç¡¬ç›˜
 					fflush(__g_logger.handler);
 				}
 
 				if (level == LFATAL){
-					//Èç¹ûÊÇ´íÎó£¬ÄÇÃ´½ÓÏÂÀ´¾Í»á½áÊø³ÌĞò£¬½áÊøÇ°ĞèÒªÏÈ°ÑÎÄ¼ş¹Ø±Õµô
+					//å¦‚æœæ˜¯é”™è¯¯ï¼Œé‚£ä¹ˆæ¥ä¸‹æ¥å°±ä¼šç»“æŸç¨‹åºï¼Œç»“æŸå‰éœ€è¦å…ˆæŠŠæ–‡ä»¶å…³é—­æ‰
 					fclose(__g_logger.handler);
 					__g_logger.handler = nullptr;
 				}
