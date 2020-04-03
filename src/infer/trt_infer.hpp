@@ -8,9 +8,10 @@
 #include <vector>
 #include <map>
 #include <opencv2/opencv.hpp>
-#include <cuda_fp16.h>
 
 #define HAS_PLUGIN
+
+class __half;
 
 namespace TRTInfer {
 
@@ -26,13 +27,7 @@ namespace TRTInfer {
 		dtHalfloat
 	};
 
-	inline int dataTypeSize(DataType dt){
-		switch (dt) {
-		case DataType::dtFloat: return sizeof(float);
-		case DataType::dtHalfloat: return sizeof(halfloat);
-		default: return -1;
-		}
-	}
+	int dataTypeSize(DataType dt);
 
 	class Tensor {
 	public:
@@ -68,6 +63,7 @@ namespace TRTInfer {
 		void resizeLike(const Tensor& other);
 		size_t count(int start_axis = 0) const;
 		void print();
+		const char* shapeString();
 
 		void toGPU(bool copyedIfCPU = true);
 		void toCPU(bool copyedIfGPU = true);
@@ -86,14 +82,10 @@ namespace TRTInfer {
 		template<typename DataT> inline DataT* cpu(int n, int c = 0, int h = 0, int w = 0) { return cpu<DataT>() + offset(n, c, h, w); }
 		template<typename DataT> inline DataT* gpu(int n, int c = 0, int h = 0, int w = 0) { return gpu<DataT>() + offset(n, c, h, w); }
 		template<typename DataT> inline float& at(int n = 0, int c = 0, int h = 0, int w = 0) { return *(cpu<DataT>() + offset(n, c, h, w)); }
-		template<typename DataT> inline cv::Mat at(int n = 0, int c = 0) { return cv::Mat(height_, width_, CV_32F, cpu<DataT>(n, c)); }
+		inline cv::Mat atMat(int n = 0, int c = 0) { return cv::Mat(height_, width_, CV_32F, cpu<float>(n, c)); }
 
-		/* ����ͼ�����ͼ���С��һ�»�resize��ͨ���������ߡ�����CV_32FҪ�����ƥ�䣬
-		* ���򱨴����������ֵ���κβ����������һ�������ţ�*/
 		void setMat(int n, const cv::Mat& image);
 
-		/* ����ͼ��result = (image[c] / 255 - mean[c]) / std[c]
-		* Ҫ��ͼ��ͨ��һ�£���Ҫ��������ʽ*/
 		void setNormMat(int n, const cv::Mat& image, float mean[3], float std[3]);
 
 		//result = (image - mean) * scale
@@ -110,6 +102,7 @@ namespace TRTInfer {
 		size_t bytes_ = 0;
 		DataHead head_ = DataHead_InCPU;
 		DataType dtType_ = DataType::dtFloat;
+		char shapeString_[100];
 	};
 
 	class Engine {

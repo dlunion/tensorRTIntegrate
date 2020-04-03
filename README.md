@@ -1,6 +1,17 @@
 # TensorRT
 
 ---
+## 更新3
+* 1、支持OnnX的插件开发，并且实现[CenterNet](https://github.com/xingyizhou/CenterNet)的DCNv2插件demo和Inference实现，附有案例
+* 2、基于tensorRT7.0的时候，int8已经失效不可用，此次更新主要提出onnx和onnx插件开发新方法，比基于caffemodel更加简洁方便
+* 3、不建议使用pytorch->caffemodel->tensorRT，改用pytorch->onnx->tensorRT，对于任何特定需求（例如dcn、例如双线性插值），可以用插件实现
+* 4、如果不用这里提供的框架，自己实现onnx插件，这里有[一份指导](README.onnx.plugin.md)，说明了关键点，可以做参考
+
+
+## 复现centerNetDCN的检测结果
+![image1](/workspace/www.dla.draw.jpg)
+
+---
 ## 更新 2
 * 1、添加[AlphaPose](https://github.com/MVIG-SJTU/AlphaPose)和[CenterNet](https://github.com/xingyizhou/CenterNet)的Inference实现，里面包括了（ChannelMultiplication、Clip、DCN、PiexShuffle）几个插件的实现案例
 * 2、屏蔽一个代码，在tensorRT7.0时编译报错，final class
@@ -40,28 +51,6 @@ engine->output(0)->print();
 ```
 
 ---
-
-## 案例-INT8
-定义预处理函数，量化INT8需要执行推理，需要正确的分布输入
-```
-auto preprocess = [](int current, int count, cv::Mat& inputOutput) {
-    INFO("process: %d / %d", current, count);
-    inputOutput.convertTo(inputOutput, CV_32F, 1 / 255.0f, -0.5f);
-};
-```
-
-执行编译INT8模型，TRTBuilder::ModelSource指定模型从caffe而来，也可以是onnx
-```
-TRTBuilder::compileTRT(
-    TRTBuilder::TRTMode_INT8, 
-    {"fc_blob1"}, 4,
-    TRTBuilder::ModelSource("models/handmodel_resnet18.prototxt", "models/handmodel_resnet18.caffemodel"),
-    "models/handmodel_resnet18.int8.trtmodel", 
-    preprocess, 
-    "models/int8data", 
-    "models/handmodel_resnet18.calibrator.txt"
-);
-```
 
 
 ## 支持

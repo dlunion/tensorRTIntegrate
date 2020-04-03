@@ -37,6 +37,56 @@ namespace ccutil{
 
 	using namespace std;
 
+	static struct Logger{
+		mutex logger_lock_;
+		string logger_directory;
+		LoggerListener logger_listener = nullptr;
+		volatile bool has_logger = true;
+		FILE* handler = nullptr;
+		size_t lines = 0;
+
+		void setLoggerSaveDirectory(const string& loggerDirectory) {
+
+			//if logger is stop
+			if (!has_logger)
+				return;
+
+			std::unique_lock<mutex> l(logger_lock_);
+			if (handler != nullptr){
+				fclose(handler);
+				handler = nullptr;
+			}
+
+			logger_directory = loggerDirectory;
+
+			if (logger_directory.empty())
+				logger_directory = ".";
+
+#if defined(U_OS_LINUX)
+			if (logger_directory.back() != '/') {
+				logger_directory.push_back('/');
+			}
+#endif
+
+#if defined(U_OS_WINDOWS)
+			if (logger_directory.back() != '/' && logger_directory.back() != '\\') {
+				logger_directory.push_back('/');
+			}
+#endif
+		}
+
+		void close(){
+			if (handler){
+				fclose(handler);
+				handler = nullptr;
+			}
+		}
+
+		virtual ~Logger(){
+			close();
+		}
+	}__g_logger;
+
 #if defined(U_OS_WINDOWS)
 
 #define _LLFMT	"%I64"
@@ -160,10 +210,6 @@ namespace ccutil{
 				__log_func(file_, line_, level_, "");
 			else
 				__log_func(file_, line_, level_, "%s", msg_.c_str());
-		}
-
-		if (level_ == LFATAL){
-			abort();
 		}
 	}
 
@@ -1028,7 +1074,7 @@ namespace ccutil{
 		if (p > l)
 			return path.substr(0, p + 1) + newSuffix;
 
-		//没有.的文件，只是在尾巴加后缀，这种有点是在路径上的点而不是文件名的点
+		//û��.���ļ���ֻ����β�ͼӺ�׺�������е�����·���ϵĵ�������ļ����ĵ�
 		return path + "." + newSuffix;
 	}
 
@@ -1288,7 +1334,7 @@ namespace ccutil{
 #ifdef U_OS_WINDOWS
 			if (*iter_ptr == '/' || *iter_ptr == '\\' || *iter_ptr == 0){
 #else
-			if (*iter_ptr == '/' && iter_ptr != dir_ptr || *iter_ptr == 0){
+			if (*iter_ptr == '/' || *iter_ptr == 0){
 #endif
 				char old = *iter_ptr;
 				*iter_ptr = 0;
@@ -1424,6 +1470,54 @@ namespace ccutil{
 		return voclabels;
 	}
 
+	const vector<string>& cocoLabels(){
+		static vector<string> cocolabels{
+			"person", "bicycle", "car", "motorcycle", "airplane",
+			"bus", "train", "truck", "boat", "traffic light", "fire hydrant",
+			"stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse",
+			"sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack",
+			"umbrella", "handbag", "tie", "suitcase", "frisbee", "skis",
+			"snowboard", "sports ball", "kite", "baseball bat", "baseball glove",
+			"skateboard", "surfboard", "tennis racket", "bottle", "wine glass",
+			"cup", "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich",
+			"orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake",
+			"chair", "couch", "potted plant", "bed", "dining table", "toilet", "tv",
+			"laptop", "mouse", "remote", "keyboard", "cell phone", "microwave",
+			"oven", "toaster", "sink", "refrigerator", "book", "clock", "vase",
+			"scissors", "teddy bear", "hair drier", "toothbrush"
+		};
+		return cocolabels;
+	}
+
+	string vocName(int label){
+		auto& labels = vocLabels();
+		if(label < 0 || label >= labels.size())
+			return format("unknow label[%d]", label);
+		return labels[label];
+	}
+
+	string cocoName(int label){
+		auto& labels = cocoLabels();
+		if(label < 0 || label >= labels.size())
+			return format("unknow label[%d]", label);
+		return labels[label];
+	}
+
+	void drawbbox(cv::Mat& image, const BBox& bbox, DrawType drawType){
+
+		string name;
+		if(drawType == DrawType::CoCo){
+			name = cocoName(bbox.label);
+		}else{
+			name = vocName(bbox.label);
+		}
+
+		auto color = randColor(bbox.label);
+		rectangle(image, bbox, color, 2, 16);
+		cv::putText(image, format("%.2f, %s", bbox.score, name.c_str()), bbox.tl() - cv::Point(-2, 3), 0, 0.6, cv::Scalar(80, 80, 80), 2, 16);
+		cv::putText(image, format("%.2f, %s", bbox.score, name.c_str()), bbox.tl() - cv::Point(0, 5), 0, 0.6, color, 2, 16);
+	}
+
 	vector<int> seque(int begin, int end){
 
 		if (end < begin) std::swap(begin, end);
@@ -1465,7 +1559,28 @@ namespace ccutil{
 
 		auto itr = labelmap.find(name);
 		if (itr == labelmap.end()){
-			printf("**********name[%s] not in labelmap.\n", name.c_str());
+			printf("**********name[%s] not in voc labelmap.\n", name.c_str());
+			return -1;
+		}
+		return itr->second;
+	}
+
+	int cocoLabel(const string& name){
+		static map<string, int> labelmap;
+		static mutex lock_;
+		if (labelmap.empty()){
+
+			std::unique_lock<mutex> l(lock_);
+			if (labelmap.empty()){
+				auto labels = cocoLabels();
+				for (int i = 0; i < labels.size(); ++i)
+					labelmap[labels[i]] = i;
+			}
+		}
+
+		auto itr = labelmap.find(name);
+		if (itr == labelmap.end()){
+			printf("**********name[%s] not in coco labelmap.\n", name.c_str());
 			return -1;
 		}
 		return itr->second;
@@ -1501,11 +1616,11 @@ namespace ccutil{
 		cv::Mat w = m;
 
 		if (m.isSubmatrix()){
-			//如果是子矩阵，则克隆一个
+			//������Ӿ������¡һ��
 			w = m.clone();
 		}
 		else if (m.dims == 2){
-			//如果是图像那样存在对齐数据的二维矩阵，那么会由于对齐，也需要clone一个
+			//�����ͼ���������ڶ������ݵĶ�ά������ô�����ڶ��룬Ҳ��Ҫcloneһ��
 			if (m.step.p[1] * m.size[1] != m.step.p[0])
 				w = m.clone();
 		}
@@ -1552,7 +1667,7 @@ namespace ccutil{
 	} GUID;
 #endif
 
-	//返回32位的大写字母的uuid
+	//����32λ�Ĵ�д��ĸ��uuid
 	string uuid(){
 
 #if defined(HAS_UUID)
@@ -1639,7 +1754,6 @@ namespace ccutil{
 
 		readModeEndSEEK_ = 0;
 		if (hasReadMode && f_ != nullptr){
-			//获取他的end
 			fseek(f_, 0, SEEK_END);
 			readModeEndSEEK_ = ftell(f_);
 			fseek(f_, 0, SEEK_SET);
@@ -1831,7 +1945,7 @@ namespace ccutil{
 
 
 	//////////////////////////////////////////////////////////////////////////
-	//为0时，不cache，为-1时，所有都cache
+	//Ϊ0ʱ����cache��Ϊ-1ʱ�����ж�cache
 	FileCache::FileCache(int maxCacheSize){
 		maxCacheSize_ = maxCacheSize;
 	}
@@ -2217,53 +2331,6 @@ namespace ccutil{
 		return time_string;
 	}
 
-	static struct Logger{
-		mutex logger_lock_;
-		string logger_directory;
-		LoggerListener logger_listener = nullptr;
-		volatile bool has_logger = true;
-		FILE* handler = nullptr;
-		size_t lines = 0;		//日志长度计数
-
-		void setLoggerSaveDirectory(const string& loggerDirectory) {
-
-			//if logger is stop
-			if (!has_logger)
-				return;
-
-			std::unique_lock<mutex> l(logger_lock_);
-			if (handler != nullptr){
-				//对于已经打开的文件，必须关闭，如果要修改目录的话
-				fclose(handler);
-				handler = nullptr;
-			}
-
-			logger_directory = loggerDirectory;
-
-			if (logger_directory.empty())
-				logger_directory = ".";
-
-#if defined(U_OS_LINUX)
-			if (logger_directory.back() != '/') {
-				logger_directory.push_back('/');
-			}
-#endif
-
-#if defined(U_OS_WINDOWS)
-			if (logger_directory.back() != '/' && logger_directory.back() != '\\') {
-				logger_directory.push_back('/');
-			}
-#endif
-		}
-
-		virtual ~Logger(){
-			if (handler){
-				fclose(handler);
-				handler = nullptr;
-			}
-		}
-	}__g_logger;
-
 	static bool loggerCatchListener(const char* file, int line, int level, const char* message){
 		__log_func(file, line, level, "%s", message);
 		return false;
@@ -2292,11 +2359,10 @@ namespace ccutil{
 	void __log_func(const char* file, int line, int level, const char* fmt, ...) {
 
 		if (__g_logger.logger_listener != nullptr){
-			//如果返回false，则直接返回，返回true才会写入日志系统
 			char buffer[10000];
 			va_list vl;
 			va_start(vl, fmt);
-			vsprintf(buffer, fmt, vl);
+			vsnprintf(buffer, sizeof(buffer), fmt, vl);
 			if (!__g_logger.logger_listener(file, line, level, buffer))
 				return;
 		}
@@ -2312,9 +2378,16 @@ namespace ccutil{
 		va_start(vl, fmt);
 		
 		char buffer[10000];
-		int n = sprintf(buffer, "%s[%s:%s:%d]:", level_string(level), now.c_str(), fileName(file, true).c_str(), line);
-		vsprintf(buffer + n, fmt, vl);
-		printf("%s\n", buffer);
+		int n = sprintf(buffer, "%s[%s:%s:%d]:", level_string(level), now.c_str(), file, line);
+		vsnprintf(buffer + n, sizeof(buffer) - n, fmt, vl);
+
+		if(level == LFATAL || level == LERROR){
+			fprintf(stderr, "\033[31m%s\033[0m\n", buffer);
+		}else if(level == LWARNING){
+			printf("\033[1m%s\033[0m\n", buffer);
+		}else{
+			printf("%s\n", buffer);
+		}
 
 		if (!__g_logger.logger_directory.empty()) {
 			string file = dateNow();
@@ -2338,12 +2411,10 @@ namespace ccutil{
 				__g_logger.lines++;
 				
 				if (__g_logger.lines % 100 == 0){
-					//每10行写入到硬盘
 					fflush(__g_logger.handler);
 				}
 
 				if (level == LFATAL){
-					//如果是错误，那么接下来就会结束程序，结束前需要先把文件关闭掉
 					fclose(__g_logger.handler);
 					__g_logger.handler = nullptr;
 				}
@@ -2351,6 +2422,10 @@ namespace ccutil{
 			else {
 				printf("ERROR: can not open logger file: %s\n", savepath.c_str());
 			}
+		}
+
+		if (level == LFATAL) {
+			abort();
 		}
 	}
 

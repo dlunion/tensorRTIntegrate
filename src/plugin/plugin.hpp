@@ -11,6 +11,7 @@
 #include <set>
 #include <infer/trt_infer.hpp>
 #include <NvInferRuntimeCommon.h>
+#include <cuda_fp16.h>
 
 namespace Plugin {
 
@@ -51,20 +52,17 @@ namespace Plugin {
 	struct LayerConfig {
 
 		///////////////////////////////////
-		//�����޸ĵ�����
 		int nbOutput_ = 1;
 		size_t workspaceSize_ = 0;
 		std::set<nvinfer1::DataType> supportDataType_;
 		std::set<nvinfer1::PluginFormat> supportPluginFormat_;
 
-		//configʱ�빹��Ȩ�������Ϣ�����ã�����Ȩ���������count��ƥ��ʱ�ᱨ��
 		std::vector<std::shared_ptr<TRTInfer::Tensor>> weights_;
 		TRTInfer::DataType configDataType_;
 		nvinfer1::PluginFormat configPluginFormat_;
 		int configMaxbatchSize_ = 0;		
 
 		///////////////////////////////////
-		//�Զ���ֵ������
 		std::vector<nvinfer1::Dims> input;
 		std::vector<nvinfer1::Dims> output;
 		std::string serializeData_;
@@ -88,7 +86,6 @@ namespace Plugin {
 		void pluginInit(const std::string& name, const nvinfer1::Weights* weights, int nbWeights);
 		void pluginInit(const std::string& name, const void* serialData, size_t serialLength);
 
-		//�����Ȩ�أ���Է��ص�configʵ���е�weights����ʼ��shape
 		virtual std::shared_ptr<LayerConfig> config(const std::string& layerName);
 		virtual bool supportsFormat(nvinfer1::DataType type, nvinfer1::PluginFormat format) const;
 		virtual void configureWithFormat(
@@ -148,20 +145,16 @@ namespace Plugin {
 	class TRTBuilderPluginFactory : public nvcaffeparser1::IPluginFactoryExt, public nvinfer1::IPluginFactory {
 
 	public:
-		//trt�����غ���
 		virtual bool isPluginExt(const char* layerName) override;
 		virtual bool isPlugin(const char* layerName) override;
-		virtual nvinfer1::IPlugin* createPlugin(const char* layerName, const nvinfer1::Weights* weights, int nbWeights) override;
-		virtual nvinfer1::IPlugin* createPlugin(const char* layerName, const void* serialData, size_t serialLength) override;
+		virtual nvinfer1::IPluginExt* createPlugin(const char* layerName, const nvinfer1::Weights* weights, int nbWeights) override;
+		virtual nvinfer1::IPluginExt* createPlugin(const char* layerName, const void* serialData, size_t serialLength) override;
 
-
-		//������ҵ��������˵��֧����
 		virtual bool support(const std::string& layerName);
 
-		//����layerName�������
 		virtual std::shared_ptr<TRTPlugin> createPlugin(const std::string& layerName);
-		virtual nvinfer1::IPlugin* builderCreate(const std::string& layerName, const nvinfer1::Weights* weights, int nbWeights);
-		virtual nvinfer1::IPlugin* inferCreate(const std::string& layerName, const void* serialData, size_t serialLength);
+		virtual nvinfer1::IPluginExt* builderCreate(const std::string& layerName, const nvinfer1::Weights* weights, int nbWeights);
+		virtual nvinfer1::IPluginExt* inferCreate(const std::string& layerName, const void* serialData, size_t serialLength);
 
 	private:
 		std::vector<std::shared_ptr<nvinfer1::IPluginExt>> plugins_;

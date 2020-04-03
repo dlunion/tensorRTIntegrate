@@ -31,6 +31,7 @@ nvinfer1::Dims TestPlugin::outputDims(int index, const nvinfer1::Dims* inputDims
 std::shared_ptr<LayerConfig> TestPlugin::config(const std::string& layerName) {
 	auto cfg = TRTPlugin::config(layerName);
 
+	//定义我们这个插件支持half和float格式
 	cfg->supportDataType_ = {nvinfer1::DataType::kHALF, nvinfer1::DataType::kFLOAT};
 	//cfg->supportDataType_ = {nvinfer1::DataType::kHALF};
 	return cfg;
@@ -43,10 +44,10 @@ int TestPlugin::enqueue(const std::vector<Plugin::GTensor>& inputs, std::vector<
 	auto block = blockDims(count);
 
 	if (config_->configDataType_ == TRTInfer::DataType::dtFloat) {
-		MyPluginKenel <float> <<<grid, block >>> (inputs[0].ptr<float>(), outputs[0].ptr<float>(), count);
+		MyPluginKenel <<<grid, block >>> (inputs[0].ptr<float>(), outputs[0].ptr<float>(), count);
 	}
 	else if (config_->configDataType_ == TRTInfer::DataType::dtHalfloat) {
-		MyPluginKenel <halfloat> <<<grid, block>>> (inputs[0].ptr<halfloat>(), outputs[0].ptr<halfloat>(), count);
+		MyPluginKenel <<<grid, block>>> (inputs[0].ptr<halfloat>(), outputs[0].ptr<halfloat>(), count);
 	}
 	return 0;
 }

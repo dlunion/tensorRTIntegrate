@@ -14,7 +14,7 @@
 #include <mutex>
 #include <opencv2/opencv.hpp>
 
-#define CCUtilVersion  "1.0.1"
+#define CCUtilVersion  "1.0.3"
 
 namespace ccutil{
 
@@ -31,6 +31,9 @@ namespace ccutil{
 #define LERROR				2
 #define LFATAL				3
 #define INFO(...)			ccutil::__log_func(__FILE__, __LINE__, LINFO, __VA_ARGS__)
+#define INFOW(...)			ccutil::__log_func(__FILE__, __LINE__, LWARNING, __VA_ARGS__)
+#define INFOE(...)			ccutil::__log_func(__FILE__, __LINE__, LERROR, __VA_ARGS__)
+#define INFOF(...)			ccutil::__log_func(__FILE__, __LINE__, LFATAL, __VA_ARGS__)
 #define LOG(level)			ccutil::LoggerStream(true, level, __FILE__, __LINE__)
 #define LOG_IF(level, op)	ccutil::LoggerStream(!(!(op)), level, __FILE__, __LINE__)
 
@@ -265,7 +268,7 @@ namespace ccutil{
 	bool saveList(const string& file, const vector<string>& list);
 
 	//name,label,x,y,r,b
-	//映射出来结果是key = name, value = label,x,y,r,b
+	//key = name, value = label,x,y,r,b
 	map<string, string> loadListMap(const string& listfile);
 	cv::Mat loadMatrix(FILE* file);
 	bool saveMatrix(FILE* file, const cv::Mat& m);
@@ -355,19 +358,18 @@ namespace ccutil{
 	bool rmtree(const string& directory, bool ignore_fail = false);
 	bool remove(const string& file);
 	FILE* fopen_mkdirs(const string& path, const string& mode);
-
 	void setRandomSeed(int seed);
 
-	//浮点数返回的不包含high，[low, high)
+	//[low, high)
 	float randrf(float low, float high);
 	cv::Rect randbox(cv::Size size, cv::Size limit);
 
-	//整数返回的，包含high，[low, high)
+	//[low, high)
 	int randr(int low, int high);
 	int randr(int high);
 	int randr_exclude(int mi, int mx, int exclude);
 
-	//返回的不包含end，[low, end)
+	//[low, end)
 	vector<int> seque(int begin, int end);
 	vector<int> seque(int end);
 	vector<int> shuffleSeque(int begin, int end);
@@ -404,7 +406,16 @@ namespace ccutil{
 	vector<cv::Scalar> randColors(int size);
 	cv::Scalar randColor(int label, int size = 80);
 	const vector<string>& vocLabels();
+	const vector<string>& cocoLabels();
 	int vocLabel(const string& name);
+	int cocoLabel(const string& name);
+	string cocoName(int label);
+
+	enum DrawType : int{
+		CoCo = 0,
+		Voc = 1
+	};
+	void drawbbox(cv::Mat& image, const BBox& bbox, DrawType drawType=DrawType::CoCo);
 
 	template<typename _TArray>
 	inline _TArray& appendArray(_TArray& array, _TArray& other){
@@ -417,7 +428,7 @@ namespace ccutil{
 		return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2));
 	}
 
-	//返回32位的大写字母的uuid
+	//32 uuid
 	string uuid();
 
 	class BinIO{
@@ -500,7 +511,6 @@ namespace ccutil{
 	class FileCache{
 
 	public:
-		//为0时，不cache，为-1时，所有都cache
 		FileCache(int maxCacheSize = -1);
 		string loadfile(const string& file);
 		vector<LabBBox> loadxml(const string& file, int* width, int* height, const string& filter);

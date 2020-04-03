@@ -20,6 +20,18 @@
     <Filter Include="src\plugin\plugins">
       <UniqueIdentifier>{0a451f49-64f0-4f84-b2e5-013ee81ee24f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\onnxplugin">
+      <UniqueIdentifier>{7d09b9c6-88bf-4100-a8ed-698035a0b28d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\onnxplugin\plugins">
+      <UniqueIdentifier>{234f1647-c24b-4a06-8009-a2dab963cad7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\onnx_parser">
+      <UniqueIdentifier>{c3b696d1-13aa-4f72-98a9-439b77ef4698}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\onnx">
+      <UniqueIdentifier>{9837a799-4a71-48fe-afbe-b3bfaab46e1d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\import_lib.cpp">
@@ -43,7 +55,37 @@
     <ClCompile Include="src\common\json.cpp">
       <Filter>src\common</Filter>
     </ClCompile>
-    <ClCompile Include="src\old_test.cpp">
+    <ClCompile Include="src\onnx_parser\builtin_op_importers.cpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClCompile>
+    <ClCompile Include="src\onnx_parser\ModelImporter.cpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClCompile>
+    <ClCompile Include="src\onnx_parser\NvOnnxParser.cpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClCompile>
+    <ClCompile Include="src\onnx_parser\onnx2trt_utils.cpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClCompile>
+    <ClCompile Include="src\onnx_parser\OnnxAttrs.cpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClCompile>
+    <ClCompile Include="src\onnx_parser\ShapedWeights.cpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClCompile>
+    <ClCompile Include="src\onnx_parser\ShapeTensor.cpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClCompile>
+    <ClCompile Include="src\onnx\onnx_ONNX_NAMESPACE-ml.pb.cc">
+      <Filter>src\onnx</Filter>
+    </ClCompile>
+    <ClCompile Include="src\onnx\onnx-operators_ONNX_NAMESPACE-ml.pb.cc">
+      <Filter>src\onnx</Filter>
+    </ClCompile>
+    <ClCompile Include="src\onnxplugin\onnxplugin.cpp">
+      <Filter>src\onnxplugin</Filter>
+    </ClCompile>
+    <ClCompile Include="src\old_main.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -81,6 +123,72 @@
     <ClInclude Include="src\common\json.hpp">
       <Filter>src\common</Filter>
     </ClInclude>
+    <ClInclude Include="src\onnxplugin\plugins\DCNv2.hpp">
+      <Filter>src\onnxplugin\plugins</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnxplugin\plugins\HSwish.hpp">
+      <Filter>src\onnxplugin\plugins</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnx_parser\builtin_op_importers.hpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnx_parser\ImporterContext.hpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnx_parser\ModelImporter.hpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnx_parser\NvOnnxParser.h">
+      <Filter>src\onnx_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnx_parser\onnx_utils.hpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnx_parser\onnx2trt.hpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnx_parser\onnx2trt_utils.hpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnx_parser\OnnxAttrs.hpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnx_parser\ShapedWeights.hpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnx_parser\ShapeTensor.hpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnx_parser\Status.hpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnx_parser\TensorOrWeights.hpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnx_parser\toposort.hpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnx_parser\trt_utils.hpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnx_parser\utils.hpp">
+      <Filter>src\onnx_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnx\onnx_ONNX_NAMESPACE-ml.pb.h">
+      <Filter>src\onnx</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnx\onnx_pb.h">
+      <Filter>src\onnx</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnx\onnx-operators_ONNX_NAMESPACE-ml.pb.h">
+      <Filter>src\onnx</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnxplugin\onnxplugin.hpp">
+      <Filter>src\onnxplugin</Filter>
+    </ClInclude>
+    <ClInclude Include="src\onnxplugin\plugins\MReLU.hpp">
+      <Filter>src\onnxplugin\plugins</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="src\plugin\plugins\ChannelMultiplicationLayer.cu">
@@ -97,6 +205,15 @@
     </CudaCompile>
     <CudaCompile Include="src\plugin\plugins\TestPlugin.cu">
       <Filter>src\plugin\plugins</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\onnxplugin\plugins\DCNv2.cu">
+      <Filter>src\onnxplugin\plugins</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\onnxplugin\plugins\HSwish.cu">
+      <Filter>src\onnxplugin\plugins</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\onnxplugin\plugins\MReLU.cu">
+      <Filter>src\onnxplugin\plugins</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

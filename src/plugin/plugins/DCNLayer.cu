@@ -19,7 +19,7 @@ do {																	 \
 
 
 template<typename _T>
-__global__ void sigmoidKernel(_T* input, _T* output, int edge);
+static __global__ void sigmoidKernel(_T* input, _T* output, int edge);
 
 template<>
 __global__ void sigmoidKernel(float* input, float* output, int edge) {
@@ -36,7 +36,7 @@ __global__ void sigmoidKernel(halfloat* input, halfloat* output, int edge) {
 	output[position] = one / (one + hexp(-input[position]));
 }
 
-__device__ float dmcnIm2colBilinearFP32(const float *bottom_data, const int data_width,
+static __device__ float dmcnIm2colBilinearFP32(const float *bottom_data, const int data_width,
 	const int height, const int width, float h, float w)
 {
 	int h_low = floor(h);
@@ -67,7 +67,7 @@ __device__ float dmcnIm2colBilinearFP32(const float *bottom_data, const int data
 	return val;
 }
 
-__device__ halfloat dmcnIm2colBilinearFP16(const halfloat *bottom_data, const int data_width,
+static __device__ halfloat dmcnIm2colBilinearFP16(const halfloat *bottom_data, const int data_width,
 	const int height, const int width, const halfloat& h, const halfloat& w)
 {
 	int h_low = hfloor(h);
@@ -101,7 +101,7 @@ __device__ halfloat dmcnIm2colBilinearFP16(const halfloat *bottom_data, const in
 }
 
 template<typename _T>
-__global__ void DCNIm2colKernel(
+static __global__ void DCNIm2colKernel(
 	const _T *data_input, const _T *data_offset, const _T *data_mask,
 	const int height_input, const int width_input, const int kernel_h, const int kernel_w,
 	const int pad_h, const int pad_w,
@@ -176,6 +176,7 @@ __global__ void DCNIm2colKernel(
 	}
 }
 
+template<>
 __global__ void DCNIm2colKernel(
 	const halfloat *data_input, const halfloat *data_offset, const halfloat *data_mask,
 	const int height_input, const int width_input, const int kernel_h, const int kernel_w,
@@ -252,7 +253,7 @@ __global__ void DCNIm2colKernel(
 }
 
 template<typename _T>
-__global__ void biasKernel(_T* data_input, const _T* bias, const int f_area, int edge) {
+static __global__ void biasKernel(_T* data_input, const _T* bias, const int f_area, int edge) {
 
 	KERNEL_POSITION;
 	int bias_index = position / f_area;
@@ -402,7 +403,6 @@ namespace Plugin {
 		auto cfg = TRTPlugin::config(layerName);
 
 		if (this->phase_ == CompilePhase) {
-			//?????????
 			int p = layerName.find('@');
 			Assert(p != -1);
 

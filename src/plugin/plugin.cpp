@@ -1,7 +1,6 @@
 
 #include "plugin.hpp"
 #include <string>
-#include "plugin.hpp"
 
 using namespace nvinfer1;
 using namespace std;
@@ -121,8 +120,7 @@ namespace Plugin {
 
 		Assert(nbWeights == weights_.size());
 		for (int i = 0; i < nbWeights; ++i) {
-			//weightsӦ����config��ʱ����Ѿ�ָ���ˣ�����Ҫ��������һ�µ�
-			Assert(weights[i].type == nvinfer1::DataType::kFLOAT);	//����Ҫ��Ȩ�����ͱ�����fp32��Ĭ�϶����
+			Assert(weights[i].type == nvinfer1::DataType::kFLOAT);
 			Assert(weights_[i] != nullptr && weights_[i]->count() == weights[i].count);
 			memcpy(weights_[i]->cpu(), weights[i].values, weights_[i]->bytes());
 		}
@@ -155,7 +153,7 @@ namespace Plugin {
 	}
 
 	bool TRTPlugin::supportsFormat(nvinfer1::DataType type, nvinfer1::PluginFormat format) const {
-		//INFO("supportsFormat %d, %d", type, format);
+		INFO("supportsFormat %d, %d", type, format);
 		return config_->supportDataType_.find(type) != config_->supportDataType_.end() &&
 			config_->supportPluginFormat_.find(format) != config_->supportPluginFormat_.end();
 	}
@@ -297,30 +295,25 @@ namespace Plugin {
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//������ҵ��������˵��֧����
 	bool TRTBuilderPluginFactory::support(const std::string& layerName) {
 		return getPluginRegistry()->findPlugin(layerName) != nullptr;
 	}
 
-	//����layerName�������
 	shared_ptr<TRTPlugin> TRTBuilderPluginFactory::createPlugin(const std::string& layerName) {
 
-		//ͨ�����ֲ���֧�ֵĲ����Ϣ
 		auto pluginInfo = getPluginRegistry()->findPlugin(layerName);
 
-		//����Ҳ����ͱ�������Ϊsupport�ķ��ظ���������õ�ͬһ������Ӧ���Ҳ���
 		if (pluginInfo == nullptr) {
 			INFO("layer '%s' unsupport.", layerName.c_str());
 		}
 		Assert(pluginInfo != nullptr);
 
-		//ִ�д��������ӵ���¼����ȥ
 		auto pluginInstance = pluginInfo->creater();
 		plugins_.push_back(pluginInstance);
 		return pluginInstance;
 	}
 
-	IPlugin* TRTBuilderPluginFactory::builderCreate(const std::string& layerName, const Weights* weights, int nbWeights) {
+	IPluginExt* TRTBuilderPluginFactory::builderCreate(const std::string& layerName, const Weights* weights, int nbWeights) {
 		INFO("builderCreate %s", layerName.c_str());
 
 		auto instance = createPlugin(layerName);
@@ -328,7 +321,7 @@ namespace Plugin {
 		return instance.get();
 	}
 
-	IPlugin* TRTBuilderPluginFactory::inferCreate(const std::string& layerName, const void* serialData, size_t serialLength) {
+	IPluginExt* TRTBuilderPluginFactory::inferCreate(const std::string& layerName, const void* serialData, size_t serialLength) {
 		//INFO("inferCreate %s", layerName.c_str());
 
 		auto instance = createPlugin(layerName);
@@ -345,11 +338,11 @@ namespace Plugin {
 		return support(layerName);
 	}
 
-	IPlugin* TRTBuilderPluginFactory::createPlugin(const char* layerName, const Weights* weights, int nbWeights) {
+	IPluginExt* TRTBuilderPluginFactory::createPlugin(const char* layerName, const Weights* weights, int nbWeights) {
 		return builderCreate(layerName, weights, nbWeights);
 	}
 
-	IPlugin* TRTBuilderPluginFactory::createPlugin(const char* layerName, const void* serialData, size_t serialLength) {
+	IPluginExt* TRTBuilderPluginFactory::createPlugin(const char* layerName, const void* serialData, size_t serialLength) {
 		return inferCreate(layerName, serialData, serialLength);
 	}
 
@@ -372,7 +365,6 @@ namespace Plugin {
 		return std::shared_ptr<nvinfer1::IPluginFactory>(new TRTBuilderPluginFactory());
 	}
 	/////////////////////////////////////////////////////////////////////////////////////////////
-	//����FP16ģ��ʱ��
 	//isPlugin: conv1
 	//isPlugin: batch_norm1
 	//isPlugin: bn_scale1
@@ -391,8 +383,6 @@ namespace Plugin {
 	//supportsFormat 1, 0
 	//supportsFormat 1, 1
 	//supportsFormat 1, 2
-	//�������half��float����ôengine��ִ��enqueue��ѡ����ʵģ���Ч�ģ���ʽ������1080Ti��û��
-	//half��֧�֣������ѡ����float��������enqueue
 	//configureWithFormat: type: 0
 	//supportsFormat 0, 0
 	//enqueue
@@ -413,7 +403,6 @@ namespace Plugin {
 	//destroy TRTPlugin
 
 
-	//����FP32ģ��ʱ��
 	//isPlugin: conv1
 	//isPlugin: batch_norm1
 	//isPlugin: bn_scale1
@@ -444,7 +433,6 @@ namespace Plugin {
 	//destroy TRTPlugin
 
 
-	//����INT8ģ��ʱ��
 	//isPlugin: conv1
 	//isPlugin: batch_norm1
 	//isPlugin: bn_scale1
@@ -488,7 +476,6 @@ namespace Plugin {
 	//destroy TRTPlugin
 
 
-	//Inference��ʱ��
 	//createPlugin: MyReLU
 	//inferCreate: MyReLU
 	//initialize

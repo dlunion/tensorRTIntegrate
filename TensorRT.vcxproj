@@ -17,7 +17,26 @@
     <ClCompile Include="src\import_lib.cpp" />
     <ClCompile Include="src\infer\trt_infer.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\old_test.cpp" />
+    <ClCompile Include="src\old_main.cpp" />
+    <ClCompile Include="src\onnxplugin\onnxplugin.cpp" />
+    <ClCompile Include="src\onnx\onnx-operators_ONNX_NAMESPACE-ml.pb.cc" />
+    <ClCompile Include="src\onnx\onnx_ONNX_NAMESPACE-ml.pb.cc">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsCpp</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsCpp</CompileAs>
+      <ConformanceMode Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ConformanceMode>
+      <RuntimeTypeInfo Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</RuntimeTypeInfo>
+      <ConformanceMode Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ConformanceMode>
+      <RuntimeTypeInfo Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</RuntimeTypeInfo>
+      <SupportJustMyCode Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</SupportJustMyCode>
+      <FunctionLevelLinking Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</FunctionLevelLinking>
+    </ClCompile>
+    <ClCompile Include="src\onnx_parser\builtin_op_importers.cpp" />
+    <ClCompile Include="src\onnx_parser\ModelImporter.cpp" />
+    <ClCompile Include="src\onnx_parser\NvOnnxParser.cpp" />
+    <ClCompile Include="src\onnx_parser\onnx2trt_utils.cpp" />
+    <ClCompile Include="src\onnx_parser\OnnxAttrs.cpp" />
+    <ClCompile Include="src\onnx_parser\ShapedWeights.cpp" />
+    <ClCompile Include="src\onnx_parser\ShapeTensor.cpp" />
     <ClCompile Include="src\plugin\plugin.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -26,6 +45,28 @@
     <ClInclude Include="src\common\json.hpp" />
     <ClInclude Include="src\infer\task_pool.hpp" />
     <ClInclude Include="src\infer\trt_infer.hpp" />
+    <ClInclude Include="src\onnxplugin\onnxplugin.hpp" />
+    <ClInclude Include="src\onnxplugin\plugins\DCNv2.hpp" />
+    <ClInclude Include="src\onnxplugin\plugins\HSwish.hpp" />
+    <ClInclude Include="src\onnxplugin\plugins\MReLU.hpp" />
+    <ClInclude Include="src\onnx\onnx-operators_ONNX_NAMESPACE-ml.pb.h" />
+    <ClInclude Include="src\onnx\onnx_ONNX_NAMESPACE-ml.pb.h" />
+    <ClInclude Include="src\onnx\onnx_pb.h" />
+    <ClInclude Include="src\onnx_parser\builtin_op_importers.hpp" />
+    <ClInclude Include="src\onnx_parser\ImporterContext.hpp" />
+    <ClInclude Include="src\onnx_parser\ModelImporter.hpp" />
+    <ClInclude Include="src\onnx_parser\NvOnnxParser.h" />
+    <ClInclude Include="src\onnx_parser\onnx2trt.hpp" />
+    <ClInclude Include="src\onnx_parser\onnx2trt_utils.hpp" />
+    <ClInclude Include="src\onnx_parser\OnnxAttrs.hpp" />
+    <ClInclude Include="src\onnx_parser\onnx_utils.hpp" />
+    <ClInclude Include="src\onnx_parser\ShapedWeights.hpp" />
+    <ClInclude Include="src\onnx_parser\ShapeTensor.hpp" />
+    <ClInclude Include="src\onnx_parser\Status.hpp" />
+    <ClInclude Include="src\onnx_parser\TensorOrWeights.hpp" />
+    <ClInclude Include="src\onnx_parser\toposort.hpp" />
+    <ClInclude Include="src\onnx_parser\trt_utils.hpp" />
+    <ClInclude Include="src\onnx_parser\utils.hpp" />
     <ClInclude Include="src\plugin\plugins\TestPlugin.hpp" />
     <ClInclude Include="src\plugin\plugins\ChannelMultiplicationLayer.hpp" />
     <ClInclude Include="src\plugin\plugins\ClipLayer.hpp" />
@@ -34,6 +75,9 @@
     <ClInclude Include="src\plugin\plugin.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <CudaCompile Include="src\onnxplugin\plugins\DCNv2.cu" />
+    <CudaCompile Include="src\onnxplugin\plugins\HSwish.cu" />
+    <CudaCompile Include="src\onnxplugin\plugins\MReLU.cu" />
     <CudaCompile Include="src\plugin\plugins\TestPlugin.cu" />
     <CudaCompile Include="src\plugin\plugins\ChannelMultiplicationLayer.cu" />
     <CudaCompile Include="src\plugin\plugins\ClipLayer.cu" />
@@ -80,15 +124,16 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>workspace</OutDir>
     <IntDir>build\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>./lean/cuda10.0/include;./lean/cudnn7.6.3;./lean/opencv3.4.6/include;./lean/tensorRT6.0.1.5/include;./src;./src/common;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>./lean/tensorRT6.0.1.5/lib;./lean/opencv3.4.6/lib;./lean/cudnn7.6.3;./lean/cuda10.0/lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <IncludePath>./lean/cuda10.0/include;./lean/cudnn7.6.3;./lean/opencv3.4.6/include;./lean/TensorRT-7.0.0.11/include;./lean/onnx/include;./lean/protobuf3.11.4/include;./src;./src/common;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryPath>./lean/TensorRT-7.0.0.11/lib;./lean/opencv3.4.6/lib;./lean/cudnn7.6.3;./lean/protobuf3.11.4/lib;./lean/onnx/lib;./lean/cuda10.0/lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <TargetName>$(ProjectName)d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>workspace</OutDir>
     <IntDir>build\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>./lean/cuda10.0/include;./lean/cudnn7.6.3;./lean/opencv3.4.6/include;./lean/tensorRT6.0.1.5/include;./src;./src/common;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>./lean/tensorRT6.0.1.5/lib;./lean/opencv3.4.6/lib;./lean/cudnn7.6.3;./lean/cuda10.0/lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <IncludePath>./lean/cuda10.0/include;./lean/cudnn7.6.3;./lean/opencv3.4.6/include;./lean/TensorRT-7.0.0.11/include;./lean/onnx/include;./lean/protobuf3.11.4/include;./src;./src/common;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryPath>./lean/TensorRT-7.0.0.11/lib;./lean/opencv3.4.6/lib;./lean/cudnn7.6.3;./lean/protobuf3.11.4/lib;./lean/onnx/lib;./lean/cuda10.0/lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -96,11 +141,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ONNX_ML;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <OpenMPSupport>false</OpenMPSupport>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -109,6 +155,7 @@
     <CudaCompile>
       <GPUDebugInfo>false</GPUDebugInfo>
       <CodeGeneration>compute_61,sm_61</CodeGeneration>
+      <Defines>ONNX_ML</Defines>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -116,10 +163,10 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ONNX_ML;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <OpenMPSupport>false</OpenMPSupport>
@@ -133,6 +180,7 @@
     </Link>
     <CudaCompile>
       <CodeGeneration>compute_61,sm_61</CodeGeneration>
+      <Defines>ONNX_ML</Defines>
     </CudaCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

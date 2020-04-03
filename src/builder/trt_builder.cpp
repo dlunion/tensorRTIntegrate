@@ -7,7 +7,7 @@
 #include <NvInfer.h>
 #include <NvInferPlugin.h>
 #include <NvCaffeParser.h>
-#include <NvOnnxParser.h>
+#include <onnx_parser/NvOnnxParser.h>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -26,13 +26,13 @@ public:
 	virtual void log(Severity severity, const char* msg) {
 
 		if (severity == Severity::kINTERNAL_ERROR) {
-			INFO("NVInfer INTERNAL_ERROR: %s", msg);
+			INFOE("NVInfer INTERNAL_ERROR: %s", msg);
 			abort();
 		}else if (severity == Severity::kERROR) {
-			INFO("NVInfer ERROR: %s", msg);
+			INFOE("NVInfer ERROR: %s", msg);
 		}
 		else  if (severity == Severity::kWARNING) {
-			INFO("NVInfer WARNING: %s", msg);
+			INFOW("NVInfer WARNING: %s", msg);
 		}
 		else {
 			//INFO("%s", msg);
@@ -59,6 +59,16 @@ namespace TRTBuilder {
 			return "UnknowTRTMode";
 		}
 	}
+
+	InputDims::InputDims(int channels, int height, int width){
+		this->channels_ = channels;
+		this->height_ = height;
+		this->width_ = width;
+	}
+
+	int InputDims::channels() const	{return this->channels_;}
+	int InputDims::height() const	{return this->height_;}
+	int InputDims::width() const	{return this->width_;}
 
 	ModelSource::ModelSource(const std::string& prototxt, const std::string& caffemodel) {
 		this->type_ = ModelSourceType_FromCaffe;
@@ -172,13 +182,19 @@ namespace TRTBuilder {
 		const std::string& savepath,
 		Int8Process int8process,
 		const std::string& int8ImageDirectory,
-		const std::string& int8EntropyCalibratorFile) {
+		const std::string& int8EntropyCalibratorFile,
+		std::vector<InputDims> inputsDimsSetup) {
+
+		if (mode == TRTMode::TRTMode_INT8) {
+			INFOF("int8 is not support, in tensorRT7.0 has error occurred");
+			return false;
+		}
 
 		bool hasEntropyCalibrator = false;
 		string entropyCalibratorData;
 		vector<string> entropyCalibratorFiles;
 
-		INFO("Build %s trtmodel.", modeString(mode));
+		INFOW("Build %s trtmodel.", modeString(mode));
 
 		if (!int8EntropyCalibratorFile.empty()) {
 			if (ccutil::exists(int8EntropyCalibratorFile)) {
@@ -194,64 +210,62 @@ namespace TRTBuilder {
 		if (mode == TRTMode_INT8) {
 			if (hasEntropyCalibrator) {
 				if (!int8ImageDirectory.empty()) {
-					INFO("imageDirectory is ignore, when entropyCalibratorFile is set");
+					INFOW("imageDirectory is ignore, when entropyCalibratorFile is set");
 				}
 			}
 			else {
 				if (int8process == nullptr) {
-					INFO("int8process must be set. when Mode is '%s'", modeString(mode));
+					INFOE("int8process must be set. when Mode is '%s'", modeString(mode));
 					return false;
 				}
 
 				entropyCalibratorFiles = ccutil::findFiles(int8ImageDirectory, "*.jpg;*.png;*.bmp;*.jpeg;*.tiff");
 				if (entropyCalibratorFiles.empty()) {
-					INFO("Can not find any images(jpg/png/bmp/jpeg/tiff) from directory: %s", int8ImageDirectory.c_str());
+					INFOE("Can not find any images(jpg/png/bmp/jpeg/tiff) from directory: %s", int8ImageDirectory.c_str());
 					return false;
 				}
 			}
 		}
 		else {
 			if (hasEntropyCalibrator) {
-				INFO("int8EntropyCalibratorFile is ignore, when Mode is '%s'", modeString(mode));
+				INFOW("int8EntropyCalibratorFile is ignore, when Mode is '%s'", modeString(mode));
 			}
 		}
 
 		shared_ptr<IBuilder> builder(createInferBuilder(gLogger), destroyNV<IBuilder>);
 		if (builder == nullptr) {
-			INFO("Can not create builder.");
+			INFOE("Can not create builder.");
 			return false;
 		}
+
+		shared_ptr<IBuilderConfig> config(builder->createBuilderConfig(), destroyNV<IBuilderConfig>);
+		config->setMaxWorkspaceSize(1 << 30);
 
 		if (mode == TRTMode_INT8) {
 			if (!builder->platformHasFastInt8()) {
-				INFO("Platform not have fast int8 support");
-				return false;
+				INFOW("Platform not have fast int8 support");
 			}
-			builder->setInt8Mode(true);
+			config->setFlag(BuilderFlag::kINT8);
+			config->setFlag(BuilderFlag::kGPU_FALLBACK);
 		}
 		else if (mode == TRTMode_FP16) {
 			if (!builder->platformHasFastFp16()) {
-				INFO("Platform not have fast fp16 support");
-				//return false;
+				INFOW("Platform not have fast fp16 support");
 			}
-			builder->setFp16Mode(true);
+			config->setFlag(BuilderFlag::kFP16);
 		}
 
-		shared_ptr<INetworkDefinition> network(builder->createNetwork(), destroyNV<INetworkDefinition>);
-		if (!network) {
-			INFO("Can not create network.");
-			return false;
-		}
-
+		shared_ptr<INetworkDefinition> network;
 		shared_ptr<ICaffeParser> caffeParser;
 		shared_ptr<nvonnxparser::IParser> onnxParser;
 
 		std::shared_ptr<nvcaffeparser1::IPluginFactoryExt> pluginFactory;
 		if (source.type() == ModelSourceType_FromCaffe) {
 
+			network = shared_ptr<INetworkDefinition>(builder->createNetwork(), destroyNV<INetworkDefinition>);
 			caffeParser.reset(createCaffeParser(), destroyNV<ICaffeParser>);
 			if (!caffeParser) {
-				INFO("Can not create caffe parser.");
+				INFOW("Can not create caffe parser.");
 				return false;
 			}
 
@@ -284,10 +298,17 @@ namespace TRTBuilder {
 		}
 		else if(source.type() == ModelSourceType_FromONNX){
 
-			INFO("Warning: ONNX has no pluginFactory support");
+			const auto explicitBatch = 1U << static_cast<uint32_t>(nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
+			network = shared_ptr<INetworkDefinition>(builder->createNetworkV2(explicitBatch), destroyNV<INetworkDefinition>);
 
+			vector<nvinfer1::Dims4> dimsSetup;
+			for(int i = 0; i < inputsDimsSetup.size(); ++i){
+				auto& item = inputsDimsSetup[i];
+				dimsSetup.push_back(nvinfer1::Dims4(1, item.channels(), item.height(), item.width()));
+			}
+			
 			//from onnx is not markOutput
-			onnxParser.reset(nvonnxparser::createParser(*network, gLogger), destroyNV<nvonnxparser::IParser>);
+			onnxParser.reset(nvonnxparser::createParser(*network, gLogger, dimsSetup), destroyNV<nvonnxparser::IParser>);
 			if (onnxParser == nullptr) {
 				INFO("Can not create parser.");
 				return false;
@@ -305,16 +326,27 @@ namespace TRTBuilder {
 
 		auto inputTensor = network->getInput(0);
 		auto inputDims = inputTensor->getDimensions();
-		Assert(inputDims.nbDims == 3);
+		int channel = 0;
+		int height = 0;
+		int width = 0;
 
-		int channel = inputDims.d[0];
-		int height = inputDims.d[1];
-		int width = inputDims.d[2];
+		if(inputDims.nbDims == 3){
+			channel = inputDims.d[0];
+			height = inputDims.d[1];
+			width = inputDims.d[2];
+		}else if(inputDims.nbDims == 4){
+			channel = inputDims.d[1];
+			height = inputDims.d[2];
+			width = inputDims.d[3];
+		}else{
+			LOG(LFATAL) << "unsupport inputDims.nbDims " << inputDims.nbDims;
+		}
 
-		INFO("Set max batch size: %d.", maxBatchSize);
+		INFO("input shape: %d x %d x %d", channel, height, width);
+		INFOW("Set max batch size: %d", maxBatchSize);
 		builder->setMaxBatchSize(maxBatchSize);
-		builder->setMaxWorkspaceSize(1 << 30);
-		
+		//builder->setMaxWorkspaceSize(1 << 30);
+
 		shared_ptr<Int8EntropyCalibrator> int8Calibrator;
 		if (mode == TRTMode_INT8) {
 			if (hasEntropyCalibrator) {
@@ -329,11 +361,11 @@ namespace TRTBuilder {
 					entropyCalibratorFiles, cv::Size(width, height), channel, int8process
 				));
 			}
-			builder->setInt8Calibrator(int8Calibrator.get());
+			config->setInt8Calibrator(int8Calibrator.get());
 		}
 
-		INFO("Build engine");
-		shared_ptr<ICudaEngine> engine(builder->buildCudaEngine(*network), destroyNV<ICudaEngine>);
+		INFOW("Build engine");
+		shared_ptr<ICudaEngine> engine(builder->buildEngineWithConfig(*network, *config), destroyNV<ICudaEngine>);
 		if (engine == nullptr) {
 			INFO("engine is nullptr");
 			return false;

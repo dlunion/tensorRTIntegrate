@@ -7,6 +7,7 @@
 #include <NvInfer.h>
 #include <NvCaffeParser.h>
 #include <NvInferPlugin.h>
+#include <cuda_fp16.h>
 
 #if defined(HAS_PLUGIN)
 #include <plugin/plugin.hpp>
@@ -28,14 +29,14 @@ public:
 	virtual void log(Severity severity, const char* msg) {
 
 		if (severity == Severity::kINTERNAL_ERROR) {
-			INFO("NVInfer INTERNAL_ERROR: %s", msg);
+			INFOE("NVInfer INTERNAL_ERROR: %s", msg);
 			abort();
 		}
 		else if (severity == Severity::kERROR) {
-			INFO("NVInfer ERROR: %s", msg);
+			INFOE("NVInfer ERROR: %s", msg);
 		}
 		else  if (severity == Severity::kWARNING) {
-			//INFO("NVInfer WARNING: %s", msg);
+			//INFOW("NVInfer WARNING: %s", msg);
 		}
 	}
 }gLogger;
@@ -47,11 +48,24 @@ namespace TRTInfer {
 	}
 
 	bool initNVPlugins() {
-		bool ok = initLibNvInferPlugins(&gLogger, "");
+		bool ok = initLibNvInferPlugins(&gLogger, "A");
 		if (!ok) {
 			INFO("init lib nvinfer plugins fail.");
 		}
 		return ok;
+	}
+
+	int dataTypeSize(DataType dt){
+		switch (dt) {
+		case DataType::dtFloat: return sizeof(float);
+		case DataType::dtHalfloat: return sizeof(halfloat);
+		default: return -1;
+		}
+	}
+
+	const char* Tensor::shapeString(){
+		snprintf(this->shapeString_, sizeof(this->shapeString_), "%d x %d x %d x %d", this->num_, this->channel_, this->height_, this->width_);
+		return this->shapeString_;
 	}
 
 	Tensor::Tensor(int n, int c, int h, int w, DataType dtType) {
@@ -63,7 +77,6 @@ namespace TRTInfer {
 
 	Tensor::Tensor(int ndims, const int* dims, DataType dtType) {
 
-		//���֧��4ά�Ĺ���
 		Assert(ndims <= 4 && ndims > 0);
 
 		int n = ndims > 0 ? dims[0] : 1;
@@ -79,7 +92,7 @@ namespace TRTInfer {
 	void Tensor::release() {
 		if (host_) {
 			free(host_);
-			host_ = nullptr;  //hostΪnullptr��������ַ��ʲô����
+			host_ = nullptr; 
 		}
 
 		if (device_) {
@@ -145,7 +158,6 @@ namespace TRTInfer {
 
 	void Tensor::resize(int ndims, const int* dims) {
 
-		//���֧��4ά�Ĺ���
 		Assert(ndims <= 4 && ndims > 0);
 
 		int n = ndims > 0 ? dims[0] : 1;
@@ -201,7 +213,6 @@ namespace TRTInfer {
 			for (int a1 = 0; a1 < dims[axis1]; ++a1) {
 				for (int a2 = 0; a2 < dims[axis2]; ++a2)
 					for (int a3 = 0; a3 < dims[axis3]; ++a3) {
-						//tptr[a0 * t.count(1) + a1 * t.count(2) + a2 * t.count(3) + a3] = sptr[a0 * muls[axis0] + a1 * muls[axis1] + a2 * muls[axis2] + a3 * muls[axis3]];
 						size_t offsetTPtr = a0 * t.count(1) + a1 * t.count(2) + a2 * t.count(3) + a3;
 						size_t offsetSPtr = a0 * muls[axis0] + a1 * muls[axis1] + a2 * muls[axis2] + a3 * muls[axis3];
 						memcpy((char*)tptr + offsetTPtr, (char*)sptr + offsetSPtr, esize);
@@ -339,7 +350,7 @@ namespace TRTInfer {
 			cout << "===========================================" << endl;
 		}
 		else {
-			INFO("not implement");
+			INFOW("print not implement");
 		}
 	}
 
@@ -542,11 +553,12 @@ namespace TRTInfer {
 
 			auto dims = context->engine_->getBindingDimensions(i);
 			//auto dtType = context->engine_->getBindingDataType(i);
-			//�����dtType��float
 			Assert(dims.nbDims <= 4);
 
+			int offset = dims.nbDims == 3 ? 1 : 0;
 			int newDims[] = {1, 1, 1, 1};
-			memcpy(newDims + 1, dims.d, sizeof(int) * dims.nbDims);
+
+			memcpy(newDims + offset, dims.d, sizeof(int) * dims.nbDims);
 			auto mapperTensor = new Tensor(4, newDims, TRTInfer::DataType::dtFloat);
 			auto newTensor = shared_ptr<Tensor>(mapperTensor);
 			if (context->engine_->bindingIsInput(i)) {
@@ -566,7 +578,6 @@ namespace TRTInfer {
 
 	void EngineImpl::forward() {
 
-		//���input�Ƿ����
 		EngineContext* context = (EngineContext*)this->context_.get();
 		int inputBatchSize = inputs_[0]->num();
 		Assert(inputBatchSize <= context->engine_->getMaxBatchSize());
@@ -574,7 +585,6 @@ namespace TRTInfer {
 		for (int i = 0; i < outputs_.size(); ++i) 
 			outputs_[i]->resize(inputBatchSize);
 
-		//�����͵�gpu
 		vector<void*> bindings;
 		for (int i = 0; i < orderdBlobs_.size(); ++i)
 			bindings.push_back(orderdBlobs_[i]->gpu());
