@@ -11,6 +11,13 @@
 ## 复现centerNetDCN的检测结果
 ![image1](/workspace/www.dla.draw.jpg)
 
+
+## 快速使用
+```bash
+bash getDLADCN.sh
+make run
+```
+
 ---
 ## 更新 2
 * 1、添加[AlphaPose](https://github.com/MVIG-SJTU/AlphaPose)和[CenterNet](https://github.com/xingyizhou/CenterNet)的Inference实现，里面包括了（ChannelMultiplication、Clip、DCN、PiexShuffle）几个插件的实现案例
@@ -29,7 +36,7 @@
 
 
 ## 环境
-* tensorRT6.0.1.5（可以修改为其他版本）
+* tensorRT7.0.0.11
 * opencv3.4.6（可以任意修改为其他版本）
 * cudnn7.6.3（可以任意修改为其他版本）
 * cuda10.0（可以任意修改为其他版本）
