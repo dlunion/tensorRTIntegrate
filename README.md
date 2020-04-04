@@ -13,6 +13,7 @@
 
 
 ## 快速使用
+* 安装protobuf v3.8.x，点击[README.onnx.plugin.md](README.onnx.plugin.md)有提到怎么装
 ```bash
 bash getDLADCN.sh
 make run
