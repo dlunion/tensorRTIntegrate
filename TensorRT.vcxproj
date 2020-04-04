@@ -19,17 +19,8 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\old_main.cpp" />
     <ClCompile Include="src\onnxplugin\onnxplugin.cpp" />
-    <ClCompile Include="src\onnx\onnx-operators_ONNX_NAMESPACE-ml.pb.cc" />
-    <ClCompile Include="src\onnx\onnx_ONNX_NAMESPACE-ml.pb.cc">
-      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsCpp</CompileAs>
-      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsCpp</CompileAs>
-      <ConformanceMode Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ConformanceMode>
-      <RuntimeTypeInfo Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</RuntimeTypeInfo>
-      <ConformanceMode Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ConformanceMode>
-      <RuntimeTypeInfo Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</RuntimeTypeInfo>
-      <SupportJustMyCode Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</SupportJustMyCode>
-      <FunctionLevelLinking Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</FunctionLevelLinking>
-    </ClCompile>
+    <ClCompile Include="src\onnx\onnx-operators_ONNX_NAMESPACE-ml.pb.cpp" />
+    <ClCompile Include="src\onnx\onnx_ONNX_NAMESPACE-ml.pb.cpp" />
     <ClCompile Include="src\onnx_parser\builtin_op_importers.cpp" />
     <ClCompile Include="src\onnx_parser\ModelImporter.cpp" />
     <ClCompile Include="src\onnx_parser\NvOnnxParser.cpp" />

@@ -76,17 +76,17 @@
     <ClCompile Include="src\onnx_parser\ShapeTensor.cpp">
       <Filter>src\onnx_parser</Filter>
     </ClCompile>
-    <ClCompile Include="src\onnx\onnx_ONNX_NAMESPACE-ml.pb.cc">
-      <Filter>src\onnx</Filter>
-    </ClCompile>
-    <ClCompile Include="src\onnx\onnx-operators_ONNX_NAMESPACE-ml.pb.cc">
-      <Filter>src\onnx</Filter>
-    </ClCompile>
     <ClCompile Include="src\onnxplugin\onnxplugin.cpp">
       <Filter>src\onnxplugin</Filter>
     </ClCompile>
     <ClCompile Include="src\old_main.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\onnx\onnx_ONNX_NAMESPACE-ml.pb.cpp">
+      <Filter>src\onnx</Filter>
+    </ClCompile>
+    <ClCompile Include="src\onnx\onnx-operators_ONNX_NAMESPACE-ml.pb.cpp">
+      <Filter>src\onnx</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
