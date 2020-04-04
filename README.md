@@ -4,6 +4,7 @@
 * 1、支持OnnX的插件开发，并且实现[CenterNet](https://github.com/xingyizhou/CenterNet)的DCNv2插件demo（fp32/fp16）和Inference实现，附有案例
 * 2、不建议使用pytorch->caffemodel->tensorRT，改用pytorch->onnx->tensorRT，对于任何特定需求（例如dcn、例如双线性插值），可以用插件实现
 * 3、如果不用这里提供的框架，自己实现onnx插件，这里有[一份指导](README.onnx.plugin.md)，说明了关键点，可以做参考
+* 4、视频讲解点击这里：https://www.bilibili.com/video/BV1Pe411x7qr
 
 
 ## 复现centerNetDCN的检测结果
