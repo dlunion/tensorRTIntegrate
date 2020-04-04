@@ -260,6 +260,7 @@ void dladcnOnnx(){
 #ifdef _WIN32
 	cv::imshow("dla dcn detect", image);
 	cv::waitKey();
+	cv::destroyAllWindows();
 #endif
 	INFO("done.");
 }
