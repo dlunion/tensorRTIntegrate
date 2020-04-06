@@ -8,7 +8,13 @@
 
 
 ## 复现centerNetDCN的检测结果
-![image1](/workspace/www.dla.draw.jpg)
+![image1](workspace/www.dla.draw.jpg)
+
+<br/>
+
+## 复现centerTrack的结果
+
+![image1](workspace/coco.tracking.jpg)
 
 
 ## 快速使用
