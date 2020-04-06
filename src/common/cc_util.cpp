@@ -1503,19 +1503,30 @@ namespace ccutil{
 		return labels[label];
 	}
 
-	void drawbbox(cv::Mat& image, const BBox& bbox, DrawType drawType){
+	void drawbbox(cv::Mat& image, const BBox& bbox, DrawType drawType, const string& labelText){
 
 		string name;
 		if(drawType == DrawType::CoCo){
 			name = cocoName(bbox.label);
-		}else{
+		}else if(drawType == DrawType::Voc){
 			name = vocName(bbox.label);
+		}else if (drawType == DrawType::Custom) {
+			name = labelText;
 		}
 
 		auto color = randColor(bbox.label);
 		rectangle(image, bbox, color, 2, 16);
-		cv::putText(image, format("%.2f, %s", bbox.score, name.c_str()), bbox.tl() - cv::Point(-2, 3), 0, 0.6, cv::Scalar(80, 80, 80), 2, 16);
-		cv::putText(image, format("%.2f, %s", bbox.score, name.c_str()), bbox.tl() - cv::Point(0, 5), 0, 0.6, color, 2, 16);
+
+		int textThickness = 1;
+		int offset = 1;
+		auto textPostition = bbox.tl() - cv::Point(0, 5);
+		string text = format("%.2f", bbox.score);
+
+		if (!name.empty())
+			text += ", " + name;
+
+		cv::putText(image, text, textPostition + cv::Point(offset, offset), 0, 0.6, cv::Scalar(80, 80, 80), textThickness, 16);
+		cv::putText(image, text, textPostition, 0, 0.6, color, textThickness, 16);
 	}
 
 	vector<int> seque(int begin, int end){

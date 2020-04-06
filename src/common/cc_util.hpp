@@ -413,9 +413,11 @@ namespace ccutil{
 
 	enum DrawType : int{
 		CoCo = 0,
-		Voc = 1
+		Voc = 1,
+		Custom = 2,
+		NoLabel = 3
 	};
-	void drawbbox(cv::Mat& image, const BBox& bbox, DrawType drawType=DrawType::CoCo);
+	void drawbbox(cv::Mat& image, const BBox& bbox, DrawType drawType=DrawType::CoCo, const string& labelText="");
 
 	template<typename _TArray>
 	inline _TArray& appendArray(_TArray& array, _TArray& other){

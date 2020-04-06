@@ -1,8 +1,8 @@
-*.trtmodel
+**/.trtmodel
 /build
-/.vs
-*.pdb
-*.exe
-*.ilk
-*.suo
+.vs
+**/*.pdb
+**/*.exe
+**/*.ilk
+**/*.suo
 objs

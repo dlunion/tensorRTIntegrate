@@ -183,12 +183,18 @@ namespace TRTInfer {
 			this->capacity_ = needed_size;
 			memset(this->host_, 0, this->bytes_);
 		}
+
+		bool hasChangeShape = (this->num_ != n || this->channel_ != c || this->height_ != h || this->width_ != w);
 		this->num_ = n;
 		this->channel_ = c;
 		this->height_ = h;
 		this->width_ = w;
 		this->head_ = DataHead_InCPU;
 		this->bytes_ = needed_size;
+
+		if (hasChangeShape) {
+			this->shapeString();
+		}
 	}
 
 	Tensor& Tensor::operator = (const Tensor& other) {

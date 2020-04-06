@@ -346,7 +346,7 @@ void testmbv3(){
 	exit(0);
 }
 
-int main11() {
+int main_old() {
 
 	//save log to file
 	ccutil::setLoggerSaveDirectory("logs");
