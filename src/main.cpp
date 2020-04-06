@@ -9,37 +9,27 @@ using namespace std;
 
 #define GPUID		0
 
-void demoOnnx(){
+struct FaceBox : ccutil::BBox {
+	vector<Point2f> landmark;
 
-	if(!ccutil::exists("models/demo.onnx")){
-		INFOE("models/demo.onnx not exists, run< python plugin_onnx_export.py > generate demo.onnx.");
-		return;
-	}
+	FaceBox() {}
+	FaceBox(const ccutil::BBox& other):ccutil::BBox(other) {}
+};
 
-	INFOW("onnx to trtmodel...");
-	TRTBuilder::compileTRT(
-		TRTBuilder::TRTMode_FP32, {}, 4,
-		TRTBuilder::ModelSource("models/demo.onnx"),
-		"models/demo.fp32.trtmodel", nullptr, "", "",
-		{TRTBuilder::InputDims(3, 5, 5), TRTBuilder::InputDims(3, 5, 5)}
-	);
-	INFO("done.");
+void drawArrow(cv::Mat& img, cv::Point pStart, cv::Point pEnd, int len, int alpha,
+	cv::Scalar color, int thickness, int lineType)
+{
+	const double PI = 3.1415926;
+	Point arrow;
+	double angle = atan2((double)(pStart.y - pEnd.y), (double)(pStart.x - pEnd.x));
+	line(img, pStart, pEnd, color, thickness, lineType);
 
-	INFO("load model: models/demo.fp32.trtmodel");
-	auto engine = TRTInfer::loadEngine("models/demo.fp32.trtmodel");
-	if (!engine) {
-		INFO("can not load model.");
-		return;
-	}
-
-	INFO("forward...");
-	
-	engine->input(0)->setTo(0.25);
-	engine->input(1)->setTo(0);
-	engine->forward();
-	auto output = engine->output(0);
-	output->print();
-	INFO("done.");
+	arrow.x = pEnd.x + len * cos(angle + PI * alpha / 180);
+	arrow.y = pEnd.y + len * sin(angle + PI * alpha / 180);
+	line(img, pEnd, arrow, color, thickness, lineType);
+	arrow.x = pEnd.x + len * cos(angle - PI * alpha / 180);
+	arrow.y = pEnd.y + len * sin(angle - PI * alpha / 180);
+	line(img, pEnd, arrow, color, thickness, lineType);
 }
 
 static Rect restoreCenterNetBox(float dx, float dy, float dw, float dh, float cellx, float celly, int stride, Size netSize, Size imageSize) {
@@ -102,7 +92,7 @@ static void preprocessCenterNetImageToTensor(const Mat& image, int numIndex, con
 		ms[i] = (ms[i] - mean[i]) / std[i];
 }
 
-static vector<ccutil::BBox> detectBoundingbox(const shared_ptr<TRTInfer::Engine>& boundingboxDetect_, const Mat& image, float threshold = 0.3){
+static vector<ccutil::BBox> detectBoundingbox(const shared_ptr<TRTInfer::Engine>& boundingboxDetect_, const Mat& image, float threshold = 0.3) {
 
 	if (boundingboxDetect_ == nullptr) {
 		INFO("detectBoundingbox failure call, model is nullptr");
@@ -122,7 +112,7 @@ static vector<ccutil::BBox> detectBoundingbox(const shared_ptr<TRTInfer::Engine>
 	float sx = image.cols / (float)inputSize.width * stride;
 	float sy = image.rows / (float)inputSize.height * stride;
 
-	for(int class_ = 0; class_ < outHM->channel(); ++class_){
+	for (int class_ = 0; class_ < outHM->channel(); ++class_) {
 		for (int i = 0; i < outHM->height(); ++i) {
 			float* ohmptr = outHM->cpu<float>(0, class_, i);
 			float* ohmpoolptr = outHMPool->cpu<float>(0, class_, i);
@@ -138,7 +128,63 @@ static vector<ccutil::BBox> detectBoundingbox(const shared_ptr<TRTInfer::Engine>
 					box.label = class_;
 					box.score = *ohmptr;
 
-					if(box.area() > 0)
+					if (box.area() > 0)
+						bboxs.push_back(box);
+				}
+				++ohmptr;
+				++ohmpoolptr;
+			}
+		}
+	}
+	return bboxs;
+}
+
+static vector<FaceBox> detectDBFace(const shared_ptr<TRTInfer::Engine>& dbfaceDetect_, const Mat& image, float threshold = 0.3) {
+
+	if (dbfaceDetect_ == nullptr) {
+		INFO("detectDBFace failure call, model is nullptr");
+		return vector<FaceBox>();
+	}
+
+	Assert(image.cols % 32 == 0 || image.rows % 32 == 0);
+
+	float mean[3] = {0.408, 0.447, 0.47};
+	float std[3] = {0.289, 0.274, 0.278};
+
+	dbfaceDetect_->input()->setNormMat(0, image, mean, std);
+	dbfaceDetect_->forward();
+	auto outHM = dbfaceDetect_->tensor("hm");
+	auto outHMPool = dbfaceDetect_->tensor("pool_hm");
+	auto outTLRB = dbfaceDetect_->tensor("tlrb");
+	auto outLandmark = dbfaceDetect_->tensor("landmark");
+	const int stride = 4;
+
+	vector<FaceBox> bboxs;
+	Size inputSize = dbfaceDetect_->input()->size();
+	float sx = image.cols / (float)inputSize.width * stride;
+	float sy = image.rows / (float)inputSize.height * stride;
+
+	float base = exp(1.0f);
+	for (int class_ = 0; class_ < outHM->channel(); ++class_) {
+		for (int i = 0; i < outHM->height(); ++i) {
+			float* ohmptr = outHM->cpu<float>(0, class_, i);
+			float* ohmpoolptr = outHMPool->cpu<float>(0, class_, i);
+			for (int j = 0; j < outHM->width(); ++j) {
+				if (*ohmptr == *ohmpoolptr && *ohmpoolptr > threshold) {
+
+					float dx = outTLRB->at<float>(0, 0, i, j);
+					float dy = outTLRB->at<float>(0, 1, i, j);
+					float dr = outTLRB->at<float>(0, 2, i, j);
+					float db = outTLRB->at<float>(0, 3, i, j);
+					float cx = j;
+					float cy = i;
+					float x = (cx - dx) * stride;
+					float y = (cy - dy) * stride;
+					float r = (cx + dr) * stride;
+					float b = (cy + db) * stride;
+					
+					FaceBox box(ccutil::BBox(x, y, r, b, *ohmptr, class_));
+					if (box.area() > 0)
 						bboxs.push_back(box);
 				}
 				++ohmptr;
@@ -201,6 +247,57 @@ static vector<tuple<ccutil::BBox, Scalar>> detectBoundingboxAndTracking(const sh
 	return bboxs;
 }
 
+Mat padImage(const Mat& image, int stride = 32) {
+
+	int w = image.cols;
+	if (image.cols % stride != 0) 
+		w = image.cols + (stride - (image.cols % stride));
+
+	int h = image.rows;
+	if (image.rows % stride != 0)
+		h = image.rows + (stride - (image.rows % stride));
+
+	if (Size(w, h) == image.size())
+		return image;
+
+	Mat output(h, w, image.type(), Scalar(0));
+	image.copyTo(output(Rect(0, 0, image.cols, image.rows)));
+	return output;
+}
+
+void demoOnnx() {
+
+	if (!ccutil::exists("models/demo.onnx")) {
+		INFOE("models/demo.onnx not exists, run< python plugin_onnx_export.py > generate demo.onnx.");
+		return;
+	}
+
+	INFOW("onnx to trtmodel...");
+	TRTBuilder::compileTRT(
+		TRTBuilder::TRTMode_FP32, {}, 4,
+		TRTBuilder::ModelSource("models/demo.onnx"),
+		"models/demo.fp32.trtmodel", nullptr, "", "",
+		{TRTBuilder::InputDims(3, 5, 5), TRTBuilder::InputDims(3, 5, 5)}
+	);
+	INFO("done.");
+
+	INFO("load model: models/demo.fp32.trtmodel");
+	auto engine = TRTInfer::loadEngine("models/demo.fp32.trtmodel");
+	if (!engine) {
+		INFO("can not load model.");
+		return;
+	}
+
+	INFO("forward...");
+
+	engine->input(0)->setTo(0.25);
+	engine->input(1)->setTo(0);
+	engine->forward();
+	auto output = engine->output(0);
+	output->print();
+	INFO("done.");
+}
+
 void dladcnOnnx(){
 
 	INFOW("onnx to trtmodel...");
@@ -252,23 +349,6 @@ void dladcnOnnx(){
 	INFO("done.");
 }
 
-
-void drawArrow(cv::Mat& img, cv::Point pStart, cv::Point pEnd, int len, int alpha,
-	cv::Scalar color, int thickness, int lineType)
-{
-	const double PI = 3.1415926;
-	Point arrow;
-	double angle = atan2((double)(pStart.y - pEnd.y), (double)(pStart.x - pEnd.x));
-	line(img, pStart, pEnd, color, thickness, lineType);
-
-	arrow.x = pEnd.x + len * cos(angle + PI * alpha / 180);
-	arrow.y = pEnd.y + len * sin(angle + PI * alpha / 180);
-	line(img, pEnd, arrow, color, thickness, lineType);
-	arrow.x = pEnd.x + len * cos(angle - PI * alpha / 180);
-	arrow.y = pEnd.y + len * sin(angle - PI * alpha / 180);
-	line(img, pEnd, arrow, color, thickness, lineType);
-}
-
 void centerTrack_coco_tracking() {
 	INFOW("onnx to trtmodel...");
 
@@ -310,10 +390,10 @@ void centerTrack_coco_tracking() {
 		auto& obj = objs[i];
 		auto& box = get<0>(obj);
 		auto& offset = get<1>(obj);
-		ccutil::drawbbox(image, box, ccutil::DrawType::NoLabel);
+		ccutil::drawbbox(image, box, ccutil::DrawType::NoName);
 		drawArrow(image, Point(offset[0], offset[1]), Point(offset[2], offset[3]), 10, 35, Scalar(0, 255, 0), 2, 16);
 
-		ccutil::drawbbox(prevImage, box, ccutil::DrawType::NoLabel);
+		ccutil::drawbbox(prevImage, box, ccutil::DrawType::NoName);
 		drawArrow(prevImage, Point(offset[0], offset[1]), Point(offset[2], offset[3]), 10, 35, Scalar(0, 255, 0), 2, 16);
 	}
 
@@ -339,11 +419,61 @@ void centerTrack_coco_tracking() {
 	INFO("done.");
 }
 
+void dbfaceOnnx() {
+
+	Mat image = imread("selfie.jpg");
+	Mat padimage = padImage(image);
+	string modelPath = ccutil::format("models/dbface.%dx%d.fp32.trtmodel", padimage.cols, padimage.rows);
+
+	if (!ccutil::exists(modelPath)) {
+
+		if (!ccutil::exists("models/dbface.onnx")) {
+			INFOW(
+				"models/dbface.onnx not found, download url: http://zifuture.com:1000/fs/public_models/dbface.onnx"
+			);
+			return;
+		}
+
+		TRTBuilder::compileTRT(
+			TRTBuilder::TRTMode_FP32, {}, 1,
+			TRTBuilder::ModelSource("models/dbface.onnx"),
+			modelPath, nullptr, "", "",
+			{TRTBuilder::InputDims(3, padimage.rows, padimage.cols)}
+		);
+	}
+
+	INFO("load model: %s", modelPath.c_str());
+	auto engine = TRTInfer::loadEngine(modelPath);
+	if (!engine) {
+		INFO("can not load model: %s", modelPath.c_str());
+		return;
+	}
+
+	INFO("forward...");
+	auto objs = detectDBFace(engine, image, 0.25);
+	 
+	INFO("objs.length = %d", objs.size());
+	for (int i = 0; i < objs.size(); ++i) {
+		auto& obj = objs[i];
+		ccutil::drawbbox(image, obj, ccutil::DrawType::Empty);
+	}
+	 
+	imwrite("selfie.draw.jpg", image);
+
+#ifdef _WIN32
+	cv::imshow("dbface selfie detect", image);
+	cv::waitKey();
+	cv::destroyAllWindows();
+#endif
+	INFO("done.");
+}
+
 int main() {
 	//log保存为文件
 	ccutil::setLoggerSaveDirectory("logs");
 	TRTBuilder::setDevice(GPUID);
 
+	dbfaceOnnx();
 	demoOnnx();
 	dladcnOnnx();
 	centerTrack_coco_tracking();

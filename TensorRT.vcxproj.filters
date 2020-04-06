@@ -189,6 +189,9 @@
     <ClInclude Include="src\onnxplugin\plugins\MReLU.hpp">
       <Filter>src\onnxplugin\plugins</Filter>
     </ClInclude>
+    <ClInclude Include="src\onnxplugin\plugins\HSigmoid.hpp">
+      <Filter>src\onnxplugin\plugins</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="src\plugin\plugins\ChannelMultiplicationLayer.cu">
@@ -213,6 +216,9 @@
       <Filter>src\onnxplugin\plugins</Filter>
     </CudaCompile>
     <CudaCompile Include="src\onnxplugin\plugins\MReLU.cu">
+      <Filter>src\onnxplugin\plugins</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\onnxplugin\plugins\HSigmoid.cu">
       <Filter>src\onnxplugin\plugins</Filter>
     </CudaCompile>
   </ItemGroup>

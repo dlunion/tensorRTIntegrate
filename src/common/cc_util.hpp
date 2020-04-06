@@ -415,7 +415,8 @@ namespace ccutil{
 		CoCo = 0,
 		Voc = 1,
 		Custom = 2,
-		NoLabel = 3
+		NoName = 3,
+		Empty = 4
 	};
 	void drawbbox(cv::Mat& image, const BBox& bbox, DrawType drawType=DrawType::CoCo, const string& labelText="");
 

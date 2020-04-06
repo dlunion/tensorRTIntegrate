@@ -38,6 +38,7 @@
     <ClInclude Include="src\infer\trt_infer.hpp" />
     <ClInclude Include="src\onnxplugin\onnxplugin.hpp" />
     <ClInclude Include="src\onnxplugin\plugins\DCNv2.hpp" />
+    <ClInclude Include="src\onnxplugin\plugins\HSigmoid.hpp" />
     <ClInclude Include="src\onnxplugin\plugins\HSwish.hpp" />
     <ClInclude Include="src\onnxplugin\plugins\MReLU.hpp" />
     <ClInclude Include="src\onnx\onnx-operators_ONNX_NAMESPACE-ml.pb.h" />
@@ -67,6 +68,7 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="src\onnxplugin\plugins\DCNv2.cu" />
+    <CudaCompile Include="src\onnxplugin\plugins\HSigmoid.cu" />
     <CudaCompile Include="src\onnxplugin\plugins\HSwish.cu" />
     <CudaCompile Include="src\onnxplugin\plugins\MReLU.cu" />
     <CudaCompile Include="src\plugin\plugins\TestPlugin.cu" />

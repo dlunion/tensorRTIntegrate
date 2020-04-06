@@ -1517,16 +1517,18 @@ namespace ccutil{
 		auto color = randColor(bbox.label);
 		rectangle(image, bbox, color, 2, 16);
 
-		int textThickness = 1;
-		int offset = 1;
-		auto textPostition = bbox.tl() - cv::Point(0, 5);
-		string text = format("%.2f", bbox.score);
+		if (drawType != DrawType::Empty) {
+			int textThickness = 1;
+			int offset = 1;
+			auto textPostition = bbox.tl() - cv::Point(0, 5);
+			string text = format("%.2f", bbox.score);
 
-		if (!name.empty())
-			text += ", " + name;
+			if (!name.empty())
+				text += ", " + name;
 
-		cv::putText(image, text, textPostition + cv::Point(offset, offset), 0, 0.6, cv::Scalar(80, 80, 80), textThickness, 16);
-		cv::putText(image, text, textPostition, 0, 0.6, color, textThickness, 16);
+			cv::putText(image, text, textPostition + cv::Point(offset, offset), 0, 0.6, cv::Scalar(80, 80, 80), textThickness, 16);
+			cv::putText(image, text, textPostition, 0, 0.6, color, textThickness, 16);
+		}
 	}
 
 	vector<int> seque(int begin, int end){
