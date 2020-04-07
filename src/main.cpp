@@ -139,6 +139,21 @@ static vector<ccutil::BBox> detectBoundingbox(const shared_ptr<TRTInfer::Engine>
 	return bboxs;
 }
 
+static float commonExp(float value) {
+
+	float gate = 1;
+	float base = exp(gate);
+	if (fabs(value) < gate) 
+		return value * base;
+
+	if (value > 0) {
+		return exp(value);
+	}
+	else {
+		return -exp(-value);
+	}
+}
+
 static vector<FaceBox> detectDBFace(const shared_ptr<TRTInfer::Engine>& dbfaceDetect_, const Mat& image, float threshold = 0.3) {
 
 	if (dbfaceDetect_ == nullptr) {
@@ -164,7 +179,6 @@ static vector<FaceBox> detectDBFace(const shared_ptr<TRTInfer::Engine>& dbfaceDe
 	float sx = image.cols / (float)inputSize.width * stride;
 	float sy = image.rows / (float)inputSize.height * stride;
 
-	float base = exp(1.0f);
 	for (int class_ = 0; class_ < outHM->channel(); ++class_) {
 		for (int i = 0; i < outHM->height(); ++i) {
 			float* ohmptr = outHM->cpu<float>(0, class_, i);
@@ -184,8 +198,18 @@ static vector<FaceBox> detectDBFace(const shared_ptr<TRTInfer::Engine>& dbfaceDe
 					float b = (cy + db) * stride;
 					
 					FaceBox box(ccutil::BBox(x, y, r, b, *ohmptr, class_));
-					if (box.area() > 0)
+					if (box.area() > 0) {
+
+						box.landmark.resize(5);
+						for (int k = 0; k < box.landmark.size(); ++k) {
+							float landmark_x = outLandmark->at<float>(0, k, i, j) * 4;
+							float landmark_y = outLandmark->at<float>(0, k+5, i, j) * 4;
+							landmark_x = (commonExp(landmark_x) + cx) * stride;
+							landmark_y = (commonExp(landmark_y) + cy) * stride;
+							box.landmark[k] = Point2f(landmark_x, landmark_y);
+						}
 						bboxs.push_back(box);
+					}
 				}
 				++ohmptr;
 				++ohmpoolptr;
@@ -456,6 +480,10 @@ void dbfaceOnnx() {
 	for (int i = 0; i < objs.size(); ++i) {
 		auto& obj = objs[i];
 		ccutil::drawbbox(image, obj, ccutil::DrawType::Empty);
+
+		for (int k = 0; k < obj.landmark.size(); ++k) {
+			cv::circle(image, obj.landmark[k], 3, Scalar(0, 0, 255), -1, 16);
+		}
 	}
 	 
 	imwrite("selfie.draw.jpg", image);

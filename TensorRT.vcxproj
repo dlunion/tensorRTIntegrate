@@ -9,7 +9,7 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-  </ItemGroup>
+  </ItemGroup> 
   <ItemGroup>
     <ClCompile Include="src\builder\trt_builder.cpp" />
     <ClCompile Include="src\common\cc_util.cpp" />

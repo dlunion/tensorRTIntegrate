@@ -6,7 +6,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerMergeEnvironment>false</LocalDebuggerMergeEnvironment>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'"> 
     <LocalDebuggerWorkingDirectory>workspace</LocalDebuggerWorkingDirectory>
     <LocalDebuggerEnvironment>PATH=$(projectDir)lean/cuda10.0/bin;$(projectDir)lean/opencv3.4.6/lib;$(projectDir)lean/cudnn7.6.3;$(projectDir)lean/TensorRT-7.0.0.11/lib</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
