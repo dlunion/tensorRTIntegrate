@@ -7,18 +7,13 @@
 #include <NvCaffeParser.h>
 #include <vector>
 #include <common/cc_util.hpp>
-#include <cuda_runtime.h>
+#include <common/trt_common.hpp>
 #include <set>
 #include <infer/trt_infer.hpp>
 #include <NvInferRuntimeCommon.h>
 #include <cuda_fp16.h>
 
 namespace Plugin {
-
-#define GPU_BLOCK_THREADS  512
-#define KERNEL_POSITION											\
-	int position = (blockDim.x * blockIdx.x + threadIdx.x);		\
-	if (position >= (edge)) return;
 
 	enum Phase {
 		CompilePhase,
@@ -164,9 +159,6 @@ namespace Plugin {
 	std::shared_ptr<nvcaffeparser1::IPluginFactoryExt> createPluginFactoryForBuildPhase();
 	std::shared_ptr<nvinfer1::IPluginFactory> createPluginFactoryForInferPhase();
 	PluginRegistry* getPluginRegistry();
-
-	dim3 gridDims(int numJobs);
-	dim3 blockDims(int numJobs);
 
 #define ExecuteKernel(numJobs, kernel, stream)		kernel<<<gridDims(numJobs), blockDims(numJobs), 0, stream>>>
 }; //namespace Plugin

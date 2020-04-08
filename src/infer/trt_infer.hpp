@@ -37,6 +37,7 @@ namespace TRTInfer {
 		Tensor(int ndims, const int* dims, DataType dtType = DataType::dtFloat);
 		Tensor(const std::vector<int>& dims, DataType dtType = DataType::dtFloat);
 		Tensor& operator = (const Tensor& other);
+		virtual ~Tensor();
 
 		inline DataType type() const { return dtType_; }
 		inline std::vector<int> dims() const { return {num_, channel_, height_, width_}; }
@@ -87,12 +88,16 @@ namespace TRTInfer {
 		void setMat(int n, const cv::Mat& image);
 
 		void setNormMat(int n, const cv::Mat& image, float mean[3], float std[3]);
+		void setNormMatGPU(int n, const cv::Mat& image, float mean[3], float std[3]);
 
 		//result = (image - mean) * scale
 		void setMatMeanScale(int n, const cv::Mat& image, float mean[3], float scale = 1.0f);
 		Tensor transpose(int axis0, int axis1, int axis2, int axis3);
 		void transposeInplace(int axis0, int axis1, int axis2, int axis3);
 		void from(const void* ptr, int n, int c = 1, int h = 1, int w = 1, DataType dtType = DataType::dtFloat);
+
+		void* getTempGPUMemory(size_t size);
+		void releaseTempGPUMemory();
 
 	private:
 		int num_ = 0, channel_ = 0, height_ = 0, width_ = 0;
@@ -103,6 +108,8 @@ namespace TRTInfer {
 		DataHead head_ = DataHead_InCPU;
 		DataType dtType_ = DataType::dtFloat;
 		char shapeString_[100];
+		void* tempGPUMemory_ = nullptr;
+		size_t tempGPUMemoryLength = 0;
 	};
 
 	class Engine {

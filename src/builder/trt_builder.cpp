@@ -32,7 +32,7 @@ public:
 			INFOE("NVInfer ERROR: %s", msg);
 		}
 		else  if (severity == Severity::kWARNING) {
-			INFOW("NVInfer WARNING: %s", msg);
+			//INFOW("NVInfer WARNING: %s", msg);
 		}
 		else {
 			//INFO("%s", msg);

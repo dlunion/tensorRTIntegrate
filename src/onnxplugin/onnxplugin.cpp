@@ -261,17 +261,6 @@ namespace ONNXPlugin {
 	void TRTPlugin::serialize(void* buffer) const {
 		config_->serialCopyTo(buffer);
 	}
-
-	////////////////////////////////////////////////////////////////////////////////////////
-	dim3 gridDims(int numJobs) {
-		int numBlockThreads = numJobs < GPU_BLOCK_THREADS ? numJobs : GPU_BLOCK_THREADS;
-		return dim3(ceil(numJobs / (float)numBlockThreads));
-	}
-
-	dim3 blockDims(int numJobs) {
-		return numJobs < GPU_BLOCK_THREADS ? numJobs : GPU_BLOCK_THREADS;
-	}
-	/////////////////////////////////////////////////////////////////////////////////////////////
 	//isPlugin: conv1
 	//isPlugin: batch_norm1
 	//isPlugin: bn_scale1

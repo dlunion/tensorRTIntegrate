@@ -3,6 +3,7 @@
 #include <cc_util.hpp>
 #include "builder/trt_builder.hpp"
 #include "infer/trt_infer.hpp"
+#include "infer/ct_detect_backend.hpp"
 
 using namespace cv;
 using namespace std;
@@ -76,20 +77,12 @@ static void preprocessCenterNetImageToTensor(const Mat& image, int numIndex, con
 	matrix.at<double>(0, 2) -= image.cols*0.5 - outW * 0.5;
 	matrix.at<double>(1, 2) -= image.rows*0.5 - outH * 0.5;
 
-	Mat outImage;
-	cv::warpAffine(image, outImage, matrix, Size(outW, outH));
-
-	vector<Mat> ms(image.channels());
-	for (int i = 0; i < ms.size(); ++i)
-		ms[i] = Mat(tensor->height(), tensor->width(), CV_32F, tensor->cpu<float>(numIndex, i));
-
-	outImage.convertTo(outImage, CV_32F, 1 / 255.0);
-	split(outImage, ms);
-
 	float mean[3] = {0.40789654, 0.44719302, 0.47026115};
 	float std[3] = {0.28863828, 0.27408164, 0.27809835};
-	for (int i = 0; i < 3; ++i)
-		ms[i] = (ms[i] - mean[i]) / std[i];
+
+	Mat outimage;
+	cv::warpAffine(image, outimage, matrix, Size(outW, outH));
+	tensor->setNormMatGPU(numIndex, outimage, mean, std);
 }
 
 static vector<ccutil::BBox> detectBoundingbox(const shared_ptr<TRTInfer::Engine>& boundingboxDetect_, const Mat& image, float threshold = 0.3) {
@@ -101,11 +94,12 @@ static vector<ccutil::BBox> detectBoundingbox(const shared_ptr<TRTInfer::Engine>
 
 	preprocessCenterNetImageToTensor(image, 0, boundingboxDetect_->input());
 	boundingboxDetect_->forward();
+
 	auto outHM = boundingboxDetect_->tensor("hm");
 	auto outHMPool = boundingboxDetect_->tensor("hm_pool");
 	auto outWH = boundingboxDetect_->tensor("wh");
 	auto outXY = boundingboxDetect_->tensor("reg");
-	const int stride = 4;
+	const int stride = 4; 
 
 	vector<ccutil::BBox> bboxs;
 	Size inputSize = boundingboxDetect_->input()->size();
@@ -139,6 +133,23 @@ static vector<ccutil::BBox> detectBoundingbox(const shared_ptr<TRTInfer::Engine>
 	return bboxs;
 }
 
+static vector<ccutil::BBox> detectBoundingbox2(const shared_ptr<TRTInfer::Engine>& boundingboxDetect_, const Mat& image, TRTInfer::CTDetectBackend* detectBackend) {
+
+	if (boundingboxDetect_ == nullptr) {
+		INFO("detectBoundingbox failure call, model is nullptr");
+		return vector<ccutil::BBox>();
+	}
+
+	preprocessCenterNetImageToTensor(image, 0, boundingboxDetect_->input());  //1.0 ms
+	boundingboxDetect_->forward();  //41.5 ms
+	
+	auto outHM = boundingboxDetect_->tensor("hm");
+	auto outHMPool = boundingboxDetect_->tensor("hm_pool");
+	auto outWH = boundingboxDetect_->tensor("wh");
+	auto outXY = boundingboxDetect_->tensor("reg");
+	return detectBackend->forwardGPU(outHM->gpu<float>(), outHMPool->gpu<float>(), outWH->gpu<float>(), outXY->gpu<float>(), image.cols, image.rows); // 0.25 ms
+}
+
 static float commonExp(float value) {
 
 	float gate = 1;
@@ -166,10 +177,11 @@ static vector<FaceBox> detectDBFace(const shared_ptr<TRTInfer::Engine>& dbfaceDe
 	float mean[3] = {0.408, 0.447, 0.47};
 	float std[3] = {0.289, 0.274, 0.278};
 
-	dbfaceDetect_->input()->setNormMat(0, image, mean, std);
+	//dbfaceDetect_->input()->setNormMat(0, image, mean, std);  // 20 ms
+	dbfaceDetect_->input()->setNormMatGPU(0, image, mean, std);		// 6 ms
 	dbfaceDetect_->forward();
 	auto outHM = dbfaceDetect_->tensor("hm");
-	auto outHMPool = dbfaceDetect_->tensor("pool_hm");
+	auto outHMPool = dbfaceDetect_->tensor("pool_hm"); 
 	auto outTLRB = dbfaceDetect_->tensor("tlrb");
 	auto outLandmark = dbfaceDetect_->tensor("landmark");
 	const int stride = 4;
@@ -353,8 +365,21 @@ void dladcnOnnx(){
 
 	INFO("forward...");
 	Mat image = imread("www.jpg");
-	
-	auto objs = detectBoundingbox(engine, image, 0.3);
+	auto input = engine->input();
+	auto output = engine->tensor("hm");
+
+	TRTInfer::CTDetectBackend detectBackend(output->width(), output->height(), output->channel(), 4, 0.3, 100);
+
+	//ccutil::Timer t;
+	//for (int i = 0; i < 1000; ++i) {
+	//	auto objs = detectBoundingbox2(engine, image, &detectBackend);   // 41.70 ms
+	//	//auto objs = detectBoundingbox(engine, image, 0.3);  // 47.46 ms
+	//	objs = ccutil::nms(objs, 0.5);
+	//}
+	//INFO("fee: %.2f ms", t.end() / 10);
+
+	auto objs = detectBoundingbox2(engine, image, &detectBackend);  // 43.86 ms
+	//auto objs = detectBoundingbox(engine, image);   // 50.24 ms
 	objs = ccutil::nms(objs, 0.5);
 
 	INFO("objs.length = %d", objs.size());
@@ -424,20 +449,9 @@ void centerTrack_coco_tracking() {
 	imwrite("coco.tracking.jpg", image);
 
 #ifdef _WIN32
-	bool showCurrent = true;
-	while (true) {
-
-		if(showCurrent)
-			cv::imshow("coco.tracking", image);
-		else
-			cv::imshow("coco.tracking", prevImage);
-
-		int key = cv::waitKey();
-		if (key == 'q')
-			break;
-
-		showCurrent = !showCurrent;
-	}
+	cv::imshow("coco.tracking.current", image);
+	cv::imshow("coco.tracking.prev", prevImage);
+	cv::waitKey();
 	cv::destroyAllWindows();
 #endif
 	INFO("done.");
@@ -473,6 +487,9 @@ void dbfaceOnnx() {
 		return;
 	}
 
+	float mean[3] = {0.408, 0.447, 0.47};
+	float std[3] = {0.289, 0.274, 0.278};
+
 	INFO("forward...");
 	auto objs = detectDBFace(engine, image, 0.25);
 	 
@@ -485,7 +502,7 @@ void dbfaceOnnx() {
 			cv::circle(image, obj.landmark[k], 3, Scalar(0, 0, 255), -1, 16);
 		}
 	}
-	 
+	
 	imwrite("selfie.draw.jpg", image);
 
 #ifdef _WIN32

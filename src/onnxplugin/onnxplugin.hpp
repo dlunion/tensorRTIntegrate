@@ -6,18 +6,13 @@
 #include <NvInfer.h>
 #include <vector>
 #include <common/cc_util.hpp>
-#include <cuda_runtime.h>
+#include <common/trt_common.hpp>
 #include <set>
 #include <infer/trt_infer.hpp>
 #include <NvInferRuntimeCommon.h>
 #include <cuda_fp16.h>
 
 namespace ONNXPlugin {
-
-#define GPU_BLOCK_THREADS  512
-#define KERNEL_POSITION											\
-	int position = (blockDim.x * blockIdx.x + threadIdx.x);		\
-	if (position >= (edge)) return;
 
 	enum Phase {
 		CompilePhase,
@@ -164,9 +159,6 @@ namespace ONNXPlugin {
 		std::vector<GTensor> outputTensors_;
 		std::vector<GTensor> weightTensors_;
 	};
-
-	dim3 gridDims(int numJobs);
-	dim3 blockDims(int numJobs);
 
 #define ExecuteKernel(numJobs, kernel, stream)		kernel<<<gridDims(numJobs), blockDims(numJobs), 0, stream>>>
 }; //namespace Plugin

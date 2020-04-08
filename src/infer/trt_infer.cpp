@@ -73,6 +73,10 @@ namespace TRTInfer {
 		resize(n, c, h, w);
 	}
 
+	Tensor::~Tensor() {
+		releaseTempGPUMemory();
+	}
+
 	Tensor::Tensor(const std::vector<int>& dims, DataType dtType):Tensor(dims.size(), dims.data(), dtType){}
 
 	Tensor::Tensor(int ndims, const int* dims, DataType dtType) {
@@ -182,6 +186,7 @@ namespace TRTInfer {
 			this->host_ = malloc(needed_size);
 			this->capacity_ = needed_size;
 			memset(this->host_, 0, this->bytes_);
+			this->head_ = DataHead_InCPU;
 		}
 
 		bool hasChangeShape = (this->num_ != n || this->channel_ != c || this->height_ != h || this->width_ != w);
@@ -189,7 +194,6 @@ namespace TRTInfer {
 		this->channel_ = c;
 		this->height_ = h;
 		this->width_ = w;
-		this->head_ = DataHead_InCPU;
 		this->bytes_ = needed_size;
 
 		if (hasChangeShape) {
@@ -403,6 +407,41 @@ namespace TRTInfer {
 		Assert((void*)ms[0].data == (void*)cpu<float>(n));
 	}
 
+	void ImageNormMeanStd_forwardGPU(float* d0, float* d1, float* d2, float mean[3], float std[3], unsigned char* src, int nump);
+
+	void* Tensor::getTempGPUMemory(size_t size) {
+		if (tempGPUMemoryLength < size) {
+			if (tempGPUMemory_) cudaFree(tempGPUMemory_);
+
+			tempGPUMemoryLength = size;
+			cuCheck(cudaMalloc(&tempGPUMemory_, tempGPUMemoryLength));
+		}
+		return tempGPUMemory_;
+	}
+
+	void Tensor::releaseTempGPUMemory() {
+		if (tempGPUMemory_) {
+			cudaFree(tempGPUMemory_);
+			tempGPUMemory_ = nullptr;
+			tempGPUMemoryLength = 0;
+		}
+	}
+
+	void Tensor::setNormMatGPU(int n, const cv::Mat& image, float mean[3], float std[3]) {
+		Assert(image.channels() == 3 && !image.empty() && type() == DataType::dtFloat);
+
+		cv::Mat inputframe = image;
+		if (inputframe.size() != cv::Size(width_, height_))
+			cv::resize(inputframe, inputframe, cv::Size(width_, height_));
+
+		int nump = count(1);
+		void* normMemory = getTempGPUMemory(nump);
+		cudaMemcpy(normMemory, inputframe.ptr<uchar>(0), nump, cudaMemcpyKind::cudaMemcpyHostToDevice);
+
+		toGPU(false);
+		ImageNormMeanStd_forwardGPU(gpu<float>(n, 0), gpu<float>(n, 1), gpu<float>(n, 2), mean, std, (uchar*)normMemory, count(1));
+	}
+
 	void Tensor::setNormMat(int n, const cv::Mat& image, float mean[3], float std[3]) {
 
 		Assert(image.channels() == 3 && !image.empty() && type() == DataType::dtFloat);
@@ -516,6 +555,7 @@ namespace TRTInfer {
 		std::vector<std::shared_ptr<Tensor>> orderdBlobs_;
 		std::map<std::string, int> blobsNameMapper_;
 		std::shared_ptr<EngineContext> context_;
+		std::vector<void*> bindingsPtr_;
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////
@@ -554,6 +594,7 @@ namespace TRTInfer {
 		inputs_.clear();
 		outputs_.clear();
 		orderdBlobs_.clear();
+		bindingsPtr_.clear();
 		blobsNameMapper_.clear();
 		for (int i = 0; i < nbBindings; ++i) {
 
@@ -580,6 +621,7 @@ namespace TRTInfer {
 			blobsNameMapper_[bindingName] = i;
 			orderdBlobs_.push_back(newTensor);
 		}
+		bindingsPtr_.resize(orderdBlobs_.size());
 	}
 
 	void EngineImpl::forward() {
@@ -588,14 +630,15 @@ namespace TRTInfer {
 		int inputBatchSize = inputs_[0]->num();
 		Assert(inputBatchSize <= context->engine_->getMaxBatchSize());
 
-		for (int i = 0; i < outputs_.size(); ++i) 
+		for (int i = 0; i < outputs_.size(); ++i) {
 			outputs_[i]->resize(inputBatchSize);
+			outputs_[i]->toGPU(false);
+		}
 
-		vector<void*> bindings;
 		for (int i = 0; i < orderdBlobs_.size(); ++i)
-			bindings.push_back(orderdBlobs_[i]->gpu());
+			bindingsPtr_[i] = orderdBlobs_[i]->gpu();
 
-		void** bindingsptr = bindings.data();
+		void** bindingsptr = bindingsPtr_.data();
 		bool execute_result = context->context_->enqueue(inputBatchSize, bindingsptr, context->stream_, nullptr);
 		Assert(execute_result);
 		cuCheck(cudaStreamSynchronize(context->stream_));

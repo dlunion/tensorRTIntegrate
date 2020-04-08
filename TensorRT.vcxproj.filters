@@ -79,14 +79,14 @@
     <ClCompile Include="src\onnxplugin\onnxplugin.cpp">
       <Filter>src\onnxplugin</Filter>
     </ClCompile>
-    <ClCompile Include="src\old_main.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\onnx\onnx_ONNX_NAMESPACE-ml.pb.cpp">
       <Filter>src\onnx</Filter>
     </ClCompile>
     <ClCompile Include="src\onnx\onnx-operators_ONNX_NAMESPACE-ml.pb.cpp">
       <Filter>src\onnx</Filter>
+    </ClCompile>
+    <ClCompile Include="src\common\trt_common.cpp">
+      <Filter>src\common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -192,6 +192,12 @@
     <ClInclude Include="src\onnxplugin\plugins\HSigmoid.hpp">
       <Filter>src\onnxplugin\plugins</Filter>
     </ClInclude>
+    <ClInclude Include="src\infer\ct_detect_backend.hpp">
+      <Filter>src\infer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\common\trt_common.hpp">
+      <Filter>src\common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="src\plugin\plugins\ChannelMultiplicationLayer.cu">
@@ -220,6 +226,12 @@
     </CudaCompile>
     <CudaCompile Include="src\onnxplugin\plugins\HSigmoid.cu">
       <Filter>src\onnxplugin\plugins</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\infer\ct_detect_backend.cu">
+      <Filter>src\infer</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\infer\trt_infer_norm.cu">
+      <Filter>src\infer</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>
