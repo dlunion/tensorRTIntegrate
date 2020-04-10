@@ -8,16 +8,17 @@ namespace TRTInfer {
 
 		KERNEL_POSITION;
 
-		unsigned char value = src[position];
-		int c = position % 3;
-
 		float* pptr_dest[3] = {d0, d1, d2};
 		float mean[3] = {m0, m1, m2};
 		float std[3] = {std0, std1, std2};
-		float* dest_ptr = pptr_dest[c];
 
-		int ldest = position / 3;
-		dest_ptr[ldest] = (value / 255.0f - mean[c]) / std[c];
+		int pos_real = position * 3;
+		unsigned char* src_real = src + pos_real;
+		for (int c = 0; c < 3; ++c) {
+			unsigned char value = src_real[c];
+			float* dest_ptr = pptr_dest[c];
+			dest_ptr[position] = (value / 255.0f - mean[c]) / std[c];
+		}
 	}
 
 	void ImageNormMeanStd_forwardGPU(float* d0, float* d1, float* d2, float mean[3], float std[3], unsigned char* src, int nump) {

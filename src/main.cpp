@@ -178,7 +178,7 @@ static vector<FaceBox> detectDBFace(const shared_ptr<TRTInfer::Engine>& dbfaceDe
 	float std[3] = {0.289, 0.274, 0.278};
 
 	//dbfaceDetect_->input()->setNormMat(0, image, mean, std);  // 20 ms
-	dbfaceDetect_->input()->setNormMatGPU(0, image, mean, std);		// 6 ms
+	dbfaceDetect_->input()->setNormMatGPU(0, image, mean, std);		// 5 ms
 	dbfaceDetect_->forward();
 	auto outHM = dbfaceDetect_->tensor("hm");
 	auto outHMPool = dbfaceDetect_->tensor("pool_hm"); 
@@ -367,7 +367,6 @@ void dladcnOnnx(){
 	Mat image = imread("www.jpg");
 	auto input = engine->input();
 	auto output = engine->tensor("hm");
-
 	TRTInfer::CTDetectBackend detectBackend(output->width(), output->height(), output->channel(), 4, 0.3, 100);
 
 	//ccutil::Timer t;
@@ -376,7 +375,7 @@ void dladcnOnnx(){
 	//	//auto objs = detectBoundingbox(engine, image, 0.3);  // 47.46 ms
 	//	objs = ccutil::nms(objs, 0.5);
 	//}
-	//INFO("fee: %.2f ms", t.end() / 10);
+	//INFO("fee: %.2f ms", t.end() / 1000);
 
 	auto objs = detectBoundingbox2(engine, image, &detectBackend);  // 43.86 ms
 	//auto objs = detectBoundingbox(engine, image);   // 50.24 ms
@@ -486,9 +485,6 @@ void dbfaceOnnx() {
 		INFO("can not load model: %s", modelPath.c_str());
 		return;
 	}
-
-	float mean[3] = {0.408, 0.447, 0.47};
-	float std[3] = {0.289, 0.274, 0.278};
 
 	INFO("forward...");
 	auto objs = detectDBFace(engine, image, 0.25);

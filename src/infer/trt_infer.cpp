@@ -439,7 +439,7 @@ namespace TRTInfer {
 		cudaMemcpy(normMemory, inputframe.ptr<uchar>(0), nump, cudaMemcpyKind::cudaMemcpyHostToDevice);
 
 		toGPU(false);
-		ImageNormMeanStd_forwardGPU(gpu<float>(n, 0), gpu<float>(n, 1), gpu<float>(n, 2), mean, std, (uchar*)normMemory, count(1));
+		ImageNormMeanStd_forwardGPU(gpu<float>(n, 0), gpu<float>(n, 1), gpu<float>(n, 2), mean, std, (uchar*)normMemory, count(2));
 	}
 
 	void Tensor::setNormMat(int n, const cv::Mat& image, float mean[3], float std[3]) {
