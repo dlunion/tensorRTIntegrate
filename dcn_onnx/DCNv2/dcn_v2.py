@@ -9,43 +9,19 @@ from torch import nn
 from torch.autograd import Function
 from torch.nn.modules.utils import _pair
 from torch.autograd.function import once_differentiable
+
 import _ext as _backend
-import json
+
 
 class _DCNv2(Function):
-
-    ###############################################  修改的部分 ############################################################
     @staticmethod
-    def symbolic(g, input, offset_mask, weight, bias, stride, padding, dilation, deformable_groups):
-        return g.op("Plugin", input, offset_mask, weight, bias, name_s="DCNv2", info_s=json.dumps({
-            "dilation": dilation,
-            "padding": padding,
-            "stride": stride,
-            "deformable_groups": deformable_groups
-        }))
-
-    ###############################################  ---------- ############################################################
-
-
-
-    ###############################################  修改的部分 ############################################################
-    # 这里以下的修改，并不是必须的，仅仅是复现DCN的时候，输入改成是input和offset_mask，原始的做法是chunk分割为x, y, mask，
-    # 然后再cat，再对mask做sigmoid后输入到dcn。这么做效率比较底下。实现DCN的时候输入input和offset_mask，内部做了分割和sigmomid
-    # 减少数据流转，提高效率，也因此在这里对操作做了修改
-    @staticmethod
-    def forward(ctx, input, offset_mask, weight, bias,
+    def forward(ctx, input, offset, mask, weight, bias,
                 stride, padding, dilation, deformable_groups):
         ctx.stride = _pair(stride)
         ctx.padding = _pair(padding)
         ctx.dilation = _pair(dilation)
         ctx.kernel_size = _pair(weight.shape[2:4])
         ctx.deformable_groups = deformable_groups
-
-        o1, o2, mask = torch.chunk(offset_mask, 3, dim=1)
-        offset = torch.cat((o1, o2), dim=1)
-        mask = torch.sigmoid(mask)
-    ###############################################  ---------- ############################################################
-
         output = _backend.dcn_v2_forward(input, weight, bias,
                                          offset, mask,
                                          ctx.kernel_size[0], ctx.kernel_size[1],
@@ -71,8 +47,9 @@ class _DCNv2(Function):
                                      ctx.dilation[0], ctx.dilation[1],
                                      ctx.deformable_groups)
 
-        return grad_input, grad_offset, grad_mask, grad_weight, grad_bias, \
-                   None, None, None, None,
+        return grad_input, grad_offset, grad_mask, grad_weight, grad_bias,\
+            None, None, None, None,
+
 
 dcn_v2_conv = _DCNv2.apply
 
@@ -139,18 +116,16 @@ class DCN(DCNv2):
         self.conv_offset_mask.bias.data.zero_()
 
     def forward(self, input):
-        ###############################################  修改的部分 ############################################################
-        offset_mask = self.conv_offset_mask(input)
-        #o1, o2, mask = torch.chunk(out, 3, dim=1)
-        #offset = torch.cat((o1, o2), dim=1)
-        #mask = torch.sigmoid(mask)
-        return dcn_v2_conv(input, offset_mask,
+        out = self.conv_offset_mask(input)
+        o1, o2, mask = torch.chunk(out, 3, dim=1)
+        offset = torch.cat((o1, o2), dim=1)
+        mask = torch.sigmoid(mask)
+        return dcn_v2_conv(input, offset, mask,
                            self.weight, self.bias,
                            self.stride,
                            self.padding,
                            self.dilation,
                            self.deformable_groups)
-        ###############################################  ---------- ############################################################
 
 
 
