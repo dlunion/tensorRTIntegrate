@@ -57,7 +57,7 @@ namespace TRTBuilder {
 	bool compileTRT(
 		TRTMode mode,
 		const std::vector<std::string>& outputs,
-		unsigned int maxBatchSize,
+		unsigned int batchSize,
 		const ModelSource& source,
 		const std::string& savepath,
 		Int8Process int8process = nullptr,					

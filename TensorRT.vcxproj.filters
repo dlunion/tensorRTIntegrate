@@ -32,6 +32,9 @@
     <Filter Include="src\onnx">
       <UniqueIdentifier>{9837a799-4a71-48fe-afbe-b3bfaab46e1d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\examples">
+      <UniqueIdentifier>{a8e99737-8d11-40c0-8e71-15bbea97af59}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\import_lib.cpp">
@@ -87,6 +90,18 @@
     </ClCompile>
     <ClCompile Include="src\common\trt_common.cpp">
       <Filter>src\common</Filter>
+    </ClCompile>
+    <ClCompile Include="src\examples\dbface.cpp">
+      <Filter>src\examples</Filter>
+    </ClCompile>
+    <ClCompile Include="src\examples\onnx.cpp">
+      <Filter>src\examples</Filter>
+    </ClCompile>
+    <ClCompile Include="src\examples\center_net_coco2x_dcn.cpp">
+      <Filter>src\examples</Filter>
+    </ClCompile>
+    <ClCompile Include="src\examples\center_track_coco_tracking.cpp">
+      <Filter>src\examples</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -198,6 +213,12 @@
     <ClInclude Include="src\common\trt_common.hpp">
       <Filter>src\common</Filter>
     </ClInclude>
+    <ClInclude Include="src\infer\dbface_backend.hpp">
+      <Filter>src\infer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\infer\trt_backend.hpp">
+      <Filter>src\infer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="src\plugin\plugins\ChannelMultiplicationLayer.cu">
@@ -231,6 +252,12 @@
       <Filter>src\infer</Filter>
     </CudaCompile>
     <CudaCompile Include="src\infer\trt_infer_norm.cu">
+      <Filter>src\infer</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\infer\dbface_backend.cu">
+      <Filter>src\infer</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\infer\trt_backend.cpp">
       <Filter>src\infer</Filter>
     </CudaCompile>
   </ItemGroup>

@@ -15,6 +15,10 @@
     <ClCompile Include="src\common\cc_util.cpp" />
     <ClCompile Include="src\common\json.cpp" />
     <ClCompile Include="src\common\trt_common.cpp" />
+    <ClCompile Include="src\examples\center_net_coco2x_dcn.cpp" />
+    <ClCompile Include="src\examples\center_track_coco_tracking.cpp" />
+    <ClCompile Include="src\examples\dbface.cpp" />
+    <ClCompile Include="src\examples\onnx.cpp" />
     <ClCompile Include="src\import_lib.cpp" />
     <ClCompile Include="src\infer\trt_infer.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -36,7 +40,9 @@
     <ClInclude Include="src\common\json.hpp" />
     <ClInclude Include="src\common\trt_common.hpp" />
     <ClInclude Include="src\infer\ct_detect_backend.hpp" />
+    <ClInclude Include="src\infer\dbface_backend.hpp" />
     <ClInclude Include="src\infer\task_pool.hpp" />
+    <ClInclude Include="src\infer\trt_backend.hpp" />
     <ClInclude Include="src\infer\trt_infer.hpp" />
     <ClInclude Include="src\onnxplugin\onnxplugin.hpp" />
     <ClInclude Include="src\onnxplugin\plugins\DCNv2.hpp" />
@@ -70,6 +76,8 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="src\infer\ct_detect_backend.cu" />
+    <CudaCompile Include="src\infer\dbface_backend.cu" />
+    <CudaCompile Include="src\infer\trt_backend.cpp" />
     <CudaCompile Include="src\infer\trt_infer_norm.cu" />
     <CudaCompile Include="src\onnxplugin\plugins\DCNv2.cu" />
     <CudaCompile Include="src\onnxplugin\plugins\HSigmoid.cu" />

@@ -21,10 +21,16 @@ namespace TRTInfer {
 		}
 	}
 
-	void ImageNormMeanStd_forwardGPU(float* d0, float* d1, float* d2, float mean[3], float std[3], unsigned char* src, int nump) {
+	void ImageNormMeanStd_forwardGPU(float* d0, float* d1, float* d2, float mean[3], float std[3], unsigned char* src, int nump, cudaStream_t stream) {
 
 		auto grid = gridDims(nump);
 		auto block = blockDims(nump);
-		ImageNormMeanStd_forwardGPU_impl << <grid, block >> >(d0, d1, d2, mean[0], mean[1], mean[2], std[0], std[1], std[2], src, nump);
+
+		if (stream) {
+			ImageNormMeanStd_forwardGPU_impl << <grid, block, 0, stream >> > (d0, d1, d2, mean[0], mean[1], mean[2], std[0], std[1], std[2], src, nump);
+		}
+		else {
+			ImageNormMeanStd_forwardGPU_impl << <grid, block >> > (d0, d1, d2, mean[0], mean[1], mean[2], std[0], std[1], std[2], src, nump);
+		}
 	}
 };

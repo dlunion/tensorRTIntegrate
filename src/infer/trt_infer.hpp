@@ -12,10 +12,12 @@
 #define HAS_PLUGIN
 
 class __half;
+struct CUstream_st;
 
 namespace TRTInfer {
 
 	typedef __half halfloat;
+	typedef CUstream_st* CUStream;
 
 	enum DataHead {
 		DataHead_InGPU,
@@ -116,8 +118,10 @@ namespace TRTInfer {
 	public:
 		virtual bool load(const std::string& file) = 0;
 		virtual void destroy() = 0;
-		virtual void forward() = 0;
+		virtual void forward(bool sync = true) = 0;
 		virtual int maxBatchSize() = 0;
+		virtual CUStream getCUStream() = 0;
+		virtual void synchronize() = 0;
 
 		virtual std::shared_ptr<Tensor> input(int index = 0) = 0;
 		virtual std::shared_ptr<Tensor> output(int index = 0) = 0;

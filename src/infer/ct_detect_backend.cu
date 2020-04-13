@@ -6,36 +6,9 @@
 
 namespace TRTInfer {
 
-	CTDetectBackend::CTDetectBackend(int width, int height, int channels, int stride, float threshold, int maxobjs) {
+	CTDetectBackend::CTDetectBackend(CUStream stream) :Backend(stream){}
 
-		this->count_ = 1 * channels * width * height;
-		this->width_ = width;
-		this->height_ = height;
-		this->channels_ = channels;
-		this->stride_ = stride;
-		this->threshold_ = threshold;
-		this->maxobjs_ = maxobjs;
-
-		this->memSize_ = maxobjs * sizeof(ccutil::BBox) + sizeof(int);  // num
-		auto code = cudaMalloc(&gpuMemory_, this->memSize_);
-		Assert(code == cudaSuccess);
-
-		cpuMemory_ = malloc(this->memSize_);
-	}
-
-	CTDetectBackend::~CTDetectBackend() {
-		if (gpuMemory_) {
-			cudaFree(gpuMemory_);
-			gpuMemory_ = nullptr;
-		}
-
-		if (cpuMemory_) {
-			free(cpuMemory_);
-			cpuMemory_ = nullptr;
-		}
-	}
-
-	__global__ void CTDetectBackend_forwardGPU(float* hm, float* hmpool, float* wh, float* reg, int* countptr, ccutil::BBox* boxptr, int width, int height, int w_x_h, int channels, int stride, float threshold,
+	static __global__ void CTDetectBackend_forwardGPU(float* hm, float* hmpool, float* wh, float* reg, int* countptr, ccutil::BBox* boxptr, int width, int height, int w_x_h, int channels, int stride, float threshold,
 		int maxobjs, int imageWidth, int imageHeight, float scale, int edge) {
 
 		KERNEL_POSITION;
@@ -70,34 +43,68 @@ namespace TRTInfer {
 		ptr->label = classes;
 	}
 
-	std::vector<ccutil::BBox> CTDetectBackend::forwardGPU(float* hm, float* hmpool, float* wh, float* reg, int imageWidth, int imageHeight) {
+	const std::vector<std::vector<ccutil::BBox>>& CTDetectBackend::forwardGPU(std::shared_ptr<Tensor> hm, std::shared_ptr<Tensor> hmpool, std::shared_ptr<Tensor> wh, 
+		std::shared_ptr<Tensor> reg, const std::vector<cv::Size>& imageSize, float threshold, int maxobjs) {
 
-		auto grid = gridDims(this->count_);
-		auto block = blockDims(this->count_);
+		int count = hm->count(1);  // w * h * c
+		int width = hm->width();
+		int height = hm->height();
+		int batchSize = hm->num();
+		int channels = hm->channel();
+		int stride = 4;
+		auto grid = gridDims(count);
+		auto block = blockDims(count);
 
-		float scale = 0;
-		if (imageWidth >= imageHeight)
-			scale = this->width_ * this->stride_ / (float)imageWidth;
-		else
-			scale = this->height_ * this->stride_ / (float)imageHeight;
+		size_t objsStoreSize = maxobjs * sizeof(ccutil::BBox) + sizeof(int);
+		int heatmapArea = width * height;
+		void* cpuPtr = getCPUMemory(objsStoreSize * batchSize);
+		char* cpuPtrInput = (char*)cpuPtr;
+		void* gpuPtr = getGPUMemory(objsStoreSize * batchSize);
+		char* gpuPtrInput = (char*)gpuPtr;
+		auto stream = getStream();
 
-		int* countptr = (int*)gpuMemory_;
-		ccutil::BBox* boxptr = (ccutil::BBox*)((char*)gpuMemory_ + sizeof(int));
+		for (int i = 0; i < batchSize; ++i) {
 
-		// clean
-		cudaMemset(gpuMemory_, 0, memSize_);
-		CTDetectBackend_forwardGPU <<< grid, block >>> (hm, hmpool, wh, reg, countptr, boxptr,
-			width_, height_, width_ * height_, channels_, stride_, threshold_, maxobjs_, imageWidth, imageHeight, scale, count_);
+			auto& imsize = imageSize[i];
+			float sw = width * stride / (float)imsize.width;
+			float sh = height * stride / (float)imsize.height;
+			float scale = std::min(sw, sh);
 
-		cudaMemcpy(cpuMemory_, gpuMemory_, this->memSize_, cudaMemcpyKind::cudaMemcpyDeviceToHost);
+			float* hm_ptr = hm->gpu<float>(i);
+			float* hm_pool_ptr = hmpool->gpu<float>(i);
+			float* wh_ptr = wh->gpu<float>(i);
+			float* reg_ptr = reg->gpu<float>(i);
 
-		int num = *((int*)cpuMemory_);
-		num = std::min(num, this->maxobjs_);
+			int* countPtr = (int*)gpuPtrInput;
+			ccutil::BBox* boxPtr = (ccutil::BBox*)((char*)gpuPtrInput + sizeof(int));
 
-		if (num == 0)
-			return std::vector<ccutil::BBox>();
+			cudaMemsetAsync(gpuPtrInput, 0, sizeof(int), stream);
+			CTDetectBackend_forwardGPU <<< grid, block, 0, stream >>> (hm_ptr, hm_pool_ptr, wh_ptr, reg_ptr, countPtr, boxPtr,
+				width, height, heatmapArea, channels, stride, threshold, maxobjs, imsize.width, imsize.height, scale, count);
 
-		ccutil::BBox* ptr = (ccutil::BBox*)((char*)cpuMemory_ + sizeof(int));
-		return std::vector<ccutil::BBox>(ptr, ptr + num);
+			cudaMemcpyAsync(cpuPtrInput, gpuPtrInput, objsStoreSize, cudaMemcpyKind::cudaMemcpyDeviceToHost, stream);
+			
+			cpuPtrInput += objsStoreSize;
+			gpuPtrInput += objsStoreSize;
+		}
+		cudaStreamSynchronize(stream);
+
+		cpuPtrInput = (char*)cpuPtr;
+		outputs_.resize(batchSize);
+
+		for (int i = 0; i < batchSize; ++i, cpuPtrInput += objsStoreSize) {
+			auto& output = outputs_[i];
+			output.clear();
+
+			int num = *((int*)cpuPtrInput);
+			num = std::min(num, maxobjs);
+
+			if (num == 0) 
+				continue;
+
+			ccutil::BBox* ptr = (ccutil::BBox*)(cpuPtrInput + sizeof(int));
+			output.insert(output.begin(), ptr, ptr + num);
+		}
+		return outputs_;
 	}
 };

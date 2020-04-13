@@ -280,6 +280,7 @@ namespace TRTInfer {
 			*dst++ = *src++;
 
 		this->dtType_ = DataType::dtFloat;
+
 		resize(-1);
 		memcpy(cpu(), convert_memory, bytes_);
 		free(convert_memory);
@@ -407,7 +408,7 @@ namespace TRTInfer {
 		Assert((void*)ms[0].data == (void*)cpu<float>(n));
 	}
 
-	void ImageNormMeanStd_forwardGPU(float* d0, float* d1, float* d2, float mean[3], float std[3], unsigned char* src, int nump);
+	void ImageNormMeanStd_forwardGPU(float* d0, float* d1, float* d2, float mean[3], float std[3], unsigned char* src, int nump, cudaStream_t stream);
 
 	void* Tensor::getTempGPUMemory(size_t size) {
 		if (tempGPUMemoryLength < size) {
@@ -430,16 +431,16 @@ namespace TRTInfer {
 	void Tensor::setNormMatGPU(int n, const cv::Mat& image, float mean[3], float std[3]) {
 		Assert(image.channels() == 3 && !image.empty() && type() == DataType::dtFloat);
 
-		cv::Mat inputframe = image;
-		if (inputframe.size() != cv::Size(width_, height_))
-			cv::resize(inputframe, inputframe, cv::Size(width_, height_));
+		cv::Mat input = image;
+		if (input.size() != cv::Size(width_, height_))
+			cv::resize(input, input, cv::Size(width_, height_));
 
-		int nump = count(1);
-		void* normMemory = getTempGPUMemory(nump);
-		cudaMemcpy(normMemory, inputframe.ptr<uchar>(0), nump, cudaMemcpyKind::cudaMemcpyHostToDevice);
+		int chwCount = count(1);
+		uchar* normMemory = (uchar*)getTempGPUMemory(chwCount);
+		cudaMemcpy(normMemory, input.ptr<uchar>(0), chwCount, cudaMemcpyKind::cudaMemcpyHostToDevice);
 
 		toGPU(false);
-		ImageNormMeanStd_forwardGPU(gpu<float>(n, 0), gpu<float>(n, 1), gpu<float>(n, 2), mean, std, (uchar*)normMemory, count(2));
+		ImageNormMeanStd_forwardGPU(gpu<float>(n, 0), gpu<float>(n, 1), gpu<float>(n, 2), mean, std, normMemory, count(2), nullptr);
 	}
 
 	void Tensor::setNormMat(int n, const cv::Mat& image, float mean[3], float std[3]) {
@@ -539,8 +540,10 @@ namespace TRTInfer {
 	public:
 		virtual bool load(const std::string& file);
 		virtual void destroy();
-		virtual void forward();
+		virtual void forward(bool sync = true);
 		virtual int maxBatchSize();
+		virtual CUStream getCUStream();
+		virtual void synchronize();
 
 		virtual std::shared_ptr<Tensor> input(int index = 0);
 		virtual std::shared_ptr<Tensor> output(int index = 0);
@@ -624,11 +627,19 @@ namespace TRTInfer {
 		bindingsPtr_.resize(orderdBlobs_.size());
 	}
 
-	void EngineImpl::forward() {
+	CUStream EngineImpl::getCUStream() {
+		return this->context_->stream_;
+	}
 
-		EngineContext* context = (EngineContext*)this->context_.get();
+	void EngineImpl::synchronize() {
+		cuCheck(cudaStreamSynchronize(context_->stream_));
+	}
+
+	void EngineImpl::forward(bool sync) {
+
+		EngineContext* context = (EngineContext*)context_.get();
 		int inputBatchSize = inputs_[0]->num();
-		Assert(inputBatchSize <= context->engine_->getMaxBatchSize());
+		Assert(inputBatchSize == context->engine_->getMaxBatchSize());
 
 		for (int i = 0; i < outputs_.size(); ++i) {
 			outputs_[i]->resize(inputBatchSize);
@@ -641,7 +652,10 @@ namespace TRTInfer {
 		void** bindingsptr = bindingsPtr_.data();
 		bool execute_result = context->context_->enqueue(inputBatchSize, bindingsptr, context->stream_, nullptr);
 		Assert(execute_result);
-		cuCheck(cudaStreamSynchronize(context->stream_));
+
+		if (sync) {
+			synchronize();
+		}
 	}
 
 	std::shared_ptr<Tensor> EngineImpl::input(int index) {

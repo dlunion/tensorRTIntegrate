@@ -1074,7 +1074,6 @@ namespace ccutil{
 		if (p > l)
 			return path.substr(0, p + 1) + newSuffix;
 
-		//û��.���ļ���ֻ����β�ͼӺ�׺�������е�����·���ϵĵ�������ļ����ĵ�
 		return path + "." + newSuffix;
 	}
 
@@ -1441,9 +1440,11 @@ namespace ccutil{
 
 	vector<cv::Scalar> randColors(int size){
 		vector<cv::Scalar> colors;
-		cv::RNG rng(5);
 		for (int i = 0; i < size; ++i)
-			colors.push_back(HSV2RGB(rng.uniform(0.f, 1.f), 1, 1));
+			colors.push_back(HSV2RGB(i / (float)size, 0.9, 0.9));
+
+		cv::RNG rng(5.0);
+		cv::randShuffle(colors, 1.0, &rng);
 		return colors;
 	}
 
@@ -1526,8 +1527,9 @@ namespace ccutil{
 			if (!name.empty())
 				text += ", " + name;
 
-			cv::putText(image, text, textPostition + cv::Point(offset, offset), 0, 0.6, cv::Scalar(80, 80, 80), textThickness, 16);
-			cv::putText(image, text, textPostition, 0, 0.6, color, textThickness, 16);
+			cv::rectangle(image, textPostition - cv::Point(1, 15), textPostition + cv::Point(bbox.width(), 5), color, -1);
+			cv::putText(image, text, textPostition + cv::Point(offset, offset), 0, 0.45, cv::Scalar(80, 80, 80), textThickness, 16);
+			cv::putText(image, text, textPostition, 0, 0.45, cv::Scalar(0), textThickness, 16);
 		}
 	}
 

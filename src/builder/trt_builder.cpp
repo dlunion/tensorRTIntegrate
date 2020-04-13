@@ -177,7 +177,7 @@ namespace TRTBuilder {
 	bool compileTRT(
 		TRTMode mode,
 		const std::vector<std::string>& outputs,
-		unsigned int maxBatchSize,
+		unsigned int batchSize,
 		const ModelSource& source,
 		const std::string& savepath,
 		Int8Process int8process,
@@ -304,7 +304,7 @@ namespace TRTBuilder {
 			vector<nvinfer1::Dims4> dimsSetup;
 			for(int i = 0; i < inputsDimsSetup.size(); ++i){
 				auto& item = inputsDimsSetup[i];
-				dimsSetup.push_back(nvinfer1::Dims4(1, item.channels(), item.height(), item.width()));
+				dimsSetup.push_back(nvinfer1::Dims4(batchSize, item.channels(), item.height(), item.width()));
 			}
 			
 			//from onnx is not markOutput
@@ -338,13 +338,15 @@ namespace TRTBuilder {
 			channel = inputDims.d[1];
 			height = inputDims.d[2];
 			width = inputDims.d[3];
+
+			Assert(batchSize == inputDims.d[0]);
 		}else{
 			LOG(LFATAL) << "unsupport inputDims.nbDims " << inputDims.nbDims;
 		}
 
 		INFO("input shape: %d x %d x %d", channel, height, width);
-		INFOW("Set max batch size: %d", maxBatchSize);
-		builder->setMaxBatchSize(maxBatchSize);
+		INFOW("Set batch size: %d", batchSize);
+		builder->setMaxBatchSize(batchSize);
 		//builder->setMaxWorkspaceSize(1 << 30);
 
 		shared_ptr<Int8EntropyCalibrator> int8Calibrator;

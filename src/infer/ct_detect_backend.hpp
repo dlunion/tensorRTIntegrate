@@ -5,23 +5,19 @@
 #include <cc_util.hpp>
 #include <opencv2/opencv.hpp>
 #include <vector>
+#include "trt_backend.hpp"
 
 namespace TRTInfer {
 
-	class CTDetectBackend {
+	class CTDetectBackend : public Backend{
 	public:
-		CTDetectBackend(int width, int height, int channels, int stride, float threshold, int maxobjs = 100);
-		virtual ~CTDetectBackend();
+		CTDetectBackend(CUStream stream = nullptr);
 
-		std::vector<ccutil::BBox> forwardGPU(float* hm, float* hmpool, float* wh, float* reg, int imageWidth, int imageHeight);
+		const std::vector<std::vector<ccutil::BBox>>& forwardGPU(std::shared_ptr<Tensor> hm, std::shared_ptr<Tensor> hmpool, std::shared_ptr<Tensor> wh, std::shared_ptr<Tensor> reg,
+			const std::vector<cv::Size>& imageSize, float threshold, int maxobjs);
 
 	private:
-		void* cpuMemory_ = nullptr;
-		void* gpuMemory_ = nullptr;
-		size_t count_;
-		int width_, height_, channels_, stride_, maxobjs_;
-		float threshold_;
-		size_t memSize_;
+		std::vector<std::vector<ccutil::BBox>> outputs_;
 	};
 };
 

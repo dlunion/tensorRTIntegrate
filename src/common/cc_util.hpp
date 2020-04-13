@@ -1,6 +1,6 @@
 
-#ifndef DETECT_UTILS_HPP
-#define DETECT_UTILS_HPP
+#ifndef CC_UTILS_HPP
+#define CC_UTILS_HPP
 
 #if defined(_WIN32)
 #	define U_OS_WINDOWS
@@ -533,4 +533,4 @@ namespace ccutil{
 	void* getThreadContext();
 };
 
-#endif //DETECT_UTILS_HPP
+#endif //CC_UTILS_HPP

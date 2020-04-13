@@ -9,7 +9,7 @@
 ## Re-implement
 ##### [CenterNet : ctdet_coco_dla_2x](https://github.com/xingyizhou/CenterNet)
 
-![image1](workspace/www.dla.draw.jpg)
+![image1](workspace/centernet.coco2x.dcn.17790319373_bd19b24cfc_k.jpg)
 
 <br/>
 
