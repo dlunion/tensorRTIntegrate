@@ -8,13 +8,23 @@
 
 
 ## 复现centerNetDCN的检测结果
-![image1](workspace/www.dla.draw.jpg)
+![image1](workspace/centernet.coco2x.dcn.17790319373_bd19b24cfc_k.jpg)
 
 <br/>
 
 ## 复现centerTrack的结果
 
+
+
 ![image1](workspace/coco.tracking.jpg)
+
+<br/>
+
+## 复现DBFace
+
+![dbface](workspace/selfie.draw.jpg)
+
+
 
 
 ## 快速使用
