@@ -31,7 +31,7 @@
 
 ## Use TensorRT-Integrate
 
-install protobuf >= v3.8.x
+install protobuf == 3.11.4 (or >= 3.8.x, But it's more troublesome)
 
 ```bash
 bash getDLADCN.sh
