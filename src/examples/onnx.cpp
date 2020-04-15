@@ -20,7 +20,7 @@ namespace examples {
 		TRTBuilder::compileTRT(
 			TRTBuilder::TRTMode_FP32, {}, 4,
 			TRTBuilder::ModelSource("models/demo.onnx"),
-			"models/demo.fp32.trtmodel", nullptr, "", "",
+			"models/demo.fp32.trtmodel", 
 			{TRTBuilder::InputDims(3, 5, 5), TRTBuilder::InputDims(3, 5, 5)}
 		);
 		INFO("done.");

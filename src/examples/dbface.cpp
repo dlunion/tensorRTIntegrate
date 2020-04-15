@@ -92,7 +92,6 @@ namespace examples {
 		float mean[3] = {0.408, 0.447, 0.47};
 		float std[3] = {0.289, 0.274, 0.278};
 
-		//dbfaceDetect_->input()->setNormMat(0, image, mean, std);  // 20 ms
 		dbfaceDetect_->input()->setNormMatGPU(0, image, mean, std);		// 5 ms
 		dbfaceDetect_->forward(false);
 		auto outHM = dbfaceDetect_->tensor("hm");
@@ -123,17 +122,15 @@ namespace examples {
 
 	void dbface() {
 
-		Mat image = imread("selfie.jpg");
+		Mat image = imread("imgs/selfie.jpg");
 		if (image.empty()) {
 			INFOW("image load fail");
 			return;
 		}
 
 		Mat padimage = padImage(image);
-
-		// tensorRT 7.0 + OnnX:  Must be an explicit batchsize, that is, batchsize must be specified at compile time.
-		int batchSize = 1;
-		string modelPath = ccutil::format("models/dbface.%dx%d.fp32.b%d.trtmodel", padimage.cols, padimage.rows, batchSize);
+		int maxBatchSize = 1;
+		string modelPath = ccutil::format("models/dbface.%dx%d.fp32.b%d.trtmodel", padimage.cols, padimage.rows, maxBatchSize);
 
 		if (!ccutil::exists(modelPath)) {
 
@@ -145,9 +142,9 @@ namespace examples {
 			}
 
 			TRTBuilder::compileTRT(
-				TRTBuilder::TRTMode_FP32, {}, batchSize,
+				TRTBuilder::TRTMode_FP32, {}, maxBatchSize,
 				TRTBuilder::ModelSource("models/dbface.onnx"),
-				modelPath, nullptr, "", "",
+				modelPath, 
 				{TRTBuilder::InputDims(3, padimage.rows, padimage.cols)}
 			);
 		}
@@ -160,11 +157,9 @@ namespace examples {
 		}
 
 		INFO("forward...");
-		//auto objs = detectDBFace(engine, image, 0.25);
-
 		TRTInfer::DBFaceBackend backend(engine->getCUStream());
 		auto objs = detectDBFaceOptim(engine, image, 0.25, &backend);
-
+		
 		INFO("objs.length = %d", objs.size());
 		for (int i = 0; i < objs.size(); ++i) {
 			auto& obj = objs[i];
@@ -175,7 +170,7 @@ namespace examples {
 			}
 		}
 
-		imwrite("selfie.draw.jpg", image);
+		imwrite("results/selfie.draw.jpg", image);
 
 #ifdef _WIN32
 		cv::imshow("dbface selfie detect", image);

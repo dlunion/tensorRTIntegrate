@@ -11,6 +11,7 @@
 #pragma comment(lib, "cuda.lib")
 #pragma comment(lib, "cudart.lib")
 #pragma comment(lib, "cublas.lib")
+#pragma comment(lib, "cudnn.lib")
 
 //导入tensorRT
 #pragma comment(lib, "nvinfer.lib")

@@ -2,7 +2,7 @@
 #ifndef WReLU_HPP
 #define WReLU_HPP
 
-#include <plugin/plugin.hpp>
+#include <caffeplugin/caffeplugin.hpp>
 
 using namespace Plugin;
 

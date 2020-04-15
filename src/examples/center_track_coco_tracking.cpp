@@ -143,7 +143,7 @@ namespace examples {
 			TRTBuilder::compileTRT(
 				TRTBuilder::TRTMode_FP32, {}, 1,
 				TRTBuilder::ModelSource("models/coco_tracking.onnx"),
-				"models/coco_tracking.fp32.trtmodel", nullptr, "", "",
+				"models/coco_tracking.fp32.trtmodel", 
 				{TRTBuilder::InputDims(3, 512, 512), TRTBuilder::InputDims(3, 512, 512)}
 			);
 		}
@@ -156,8 +156,8 @@ namespace examples {
 		}
 
 		INFO("forward...");
-		Mat prevImage = imread("000020.jpg");
-		Mat image = imread("000023.jpg");
+		Mat prevImage = imread("imgs/000020.jpg");
+		Mat image = imread("imgs/000023.jpg");
 
 		auto objs = detectBoundingboxAndTracking(engine, image, prevImage, 0.35);
 
@@ -173,7 +173,7 @@ namespace examples {
 			drawArrow(prevImage, Point(offset[0], offset[1]), Point(offset[2], offset[3]), 10, 35, Scalar(0, 255, 0), 2, 16);
 		}
 
-		imwrite("coco.tracking.jpg", image);
+		imwrite("results/coco.tracking.jpg", image);
 
 #ifdef _WIN32
 		cv::imshow("coco.tracking.current", image);

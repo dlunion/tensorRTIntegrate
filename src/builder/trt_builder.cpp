@@ -12,7 +12,7 @@
 #include <vector>
 #include <iostream>
 #include <assert.h>
-#include <plugin/plugin.hpp>
+#include <caffeplugin/caffeplugin.hpp>
 #include <infer/trt_infer.hpp>
 
 using namespace nvinfer1;
@@ -32,7 +32,7 @@ public:
 			INFOE("NVInfer ERROR: %s", msg);
 		}
 		else  if (severity == Severity::kWARNING) {
-			//INFOW("NVInfer WARNING: %s", msg);
+			INFOW("NVInfer WARNING: %s", msg);
 		}
 		else {
 			//INFO("%s", msg);
@@ -53,8 +53,6 @@ namespace TRTBuilder {
 			return "FP32";
 		case TRTMode_FP16:
 			return "FP16";
-		case TRTMode_INT8:
-			return "INT8";
 		default:
 			return "UnknowTRTMode";
 		}
@@ -87,151 +85,15 @@ namespace TRTBuilder {
 	ModelSourceType ModelSource::type() const { return this->type_; }
 
 	/////////////////////////////////////////////////////////////////////////////////////////
-	class Int8EntropyCalibrator : public IInt8EntropyCalibrator
-	{
-	public:
-		Int8EntropyCalibrator(const vector<string>& imagefiles, cv::Size size, int channels, const Int8Process& preprocess) {
-
-			Assert(channels == 1 || channels == 3);
-			Assert(preprocess != nullptr);
-			this->size_ = size;
-			this->channels_ = channels;
-			this->allimgs_ = imagefiles;
-			this->preprocess_ = preprocess;
-			this->fromCalibratorData_ = false;
-		}
-
-		Int8EntropyCalibrator(const string& entropyCalibratorData, cv::Size size, int channels, const Int8Process& preprocess) {
-
-			Assert(channels == 1 || channels == 3);
-			Assert(preprocess != nullptr);
-			this->size_ = size;
-			this->channels_ = channels;
-			this->entropyCalibratorData_ = entropyCalibratorData;
-			this->preprocess_ = preprocess;
-			this->fromCalibratorData_ = true;
-		}
-
-		int getBatchSize() const {
-			return 1;
-		}
-
-		bool next() {
-			if (cursor_ >= allimgs_.size())
-				return false;
-
-			cv::Mat im = cv::imread(allimgs_[cursor_++], channels_ == 1 ? cv::IMREAD_GRAYSCALE : cv::IMREAD_COLOR);
-			if (im.empty())
-				return false;
-
-			resize(im, im, size_);
-			im.convertTo(batchOutput_, CV_32F);
-			preprocess_(cursor_, allimgs_.size(), batchOutput_);
-
-			//copy from image
-			tensor_.from(batchOutput_.ptr<float>(0), 1, batchOutput_.rows, batchOutput_.cols, batchOutput_.channels());
-
-			//transpose NHWC to NCHW format
-			tensor_.transposeInplace(0, 3, 1, 2);
-			return true;
-		}
-
-		bool getBatch(void* bindings[], const char* names[], int nbBindings) {
-			if (!next()) return false;
-			bindings[0] = tensor_.gpu();
-			return true;
-		}
-
-		const string& getEntropyCalibratorData() {
-			return entropyCalibratorData_;
-		}
-
-		const void* readCalibrationCache(size_t& length) {
-			if (fromCalibratorData_) {
-				length = this->entropyCalibratorData_.size();
-				return this->entropyCalibratorData_.data();
-			}
-
-			length = 0;
-			return nullptr;
-		}
-
-		virtual void writeCalibrationCache(const void* cache, size_t length) {
-			entropyCalibratorData_.assign((char*)cache, length);
-		}
-
-	private:
-		cv::Mat batchOutput_;
-		int channels_ = 0;
-		Int8Process preprocess_;
-		vector<string> allimgs_;
-		size_t batchCudaSize_ = 0;
-		int cursor_ = 0;
-		cv::Size size_;
-		TRTInfer::Tensor tensor_;
-		string entropyCalibratorData_;
-		bool fromCalibratorData_ = false;
-	};
-
-	/////////////////////////////////////////////////////////////////////////////////////////
 	bool compileTRT(
 		TRTMode mode,
 		const std::vector<std::string>& outputs,
-		unsigned int batchSize,
+		unsigned int maxBatchSize,
 		const ModelSource& source,
 		const std::string& savepath,
-		Int8Process int8process,
-		const std::string& int8ImageDirectory,
-		const std::string& int8EntropyCalibratorFile,
 		std::vector<InputDims> inputsDimsSetup) {
 
-		if (mode == TRTMode::TRTMode_INT8) {
-			INFOF("int8 is not support, in tensorRT7.0 has error occurred");
-			return false;
-		}
-
-		bool hasEntropyCalibrator = false;
-		string entropyCalibratorData;
-		vector<string> entropyCalibratorFiles;
-
 		INFOW("Build %s trtmodel.", modeString(mode));
-
-		if (!int8EntropyCalibratorFile.empty()) {
-			if (ccutil::exists(int8EntropyCalibratorFile)) {
-				entropyCalibratorData = ccutil::loadfile(int8EntropyCalibratorFile);
-				if (entropyCalibratorData.empty()) {
-					INFO("entropyCalibratorFile is set as: %s, but we read is empty.", int8EntropyCalibratorFile.c_str());
-					return false;
-				}
-				hasEntropyCalibrator = true;
-			}
-		}
-		
-		if (mode == TRTMode_INT8) {
-			if (hasEntropyCalibrator) {
-				if (!int8ImageDirectory.empty()) {
-					INFOW("imageDirectory is ignore, when entropyCalibratorFile is set");
-				}
-			}
-			else {
-				if (int8process == nullptr) {
-					INFOE("int8process must be set. when Mode is '%s'", modeString(mode));
-					return false;
-				}
-
-				entropyCalibratorFiles = ccutil::findFiles(int8ImageDirectory, "*.jpg;*.png;*.bmp;*.jpeg;*.tiff");
-				if (entropyCalibratorFiles.empty()) {
-					INFOE("Can not find any images(jpg/png/bmp/jpeg/tiff) from directory: %s", int8ImageDirectory.c_str());
-					return false;
-				}
-			}
-		}
-		else {
-			if (hasEntropyCalibrator) {
-				INFOW("int8EntropyCalibratorFile is ignore, when Mode is '%s'", modeString(mode));
-			}
-		}
-
 		shared_ptr<IBuilder> builder(createInferBuilder(gLogger), destroyNV<IBuilder>);
 		if (builder == nullptr) {
 			INFOE("Can not create builder.");
@@ -239,16 +101,7 @@ namespace TRTBuilder {
 		}
 
 		shared_ptr<IBuilderConfig> config(builder->createBuilderConfig(), destroyNV<IBuilderConfig>);
-		config->setMaxWorkspaceSize(1 << 30);
-
-		if (mode == TRTMode_INT8) {
-			if (!builder->platformHasFastInt8()) {
-				INFOW("Platform not have fast int8 support");
-			}
-			config->setFlag(BuilderFlag::kINT8);
-			config->setFlag(BuilderFlag::kGPU_FALLBACK);
-		}
-		else if (mode == TRTMode_FP16) {
+		if (mode == TRTMode_FP16) {
 			if (!builder->platformHasFastFp16()) {
 				INFOW("Platform not have fast fp16 support");
 			}
@@ -298,17 +151,18 @@ namespace TRTBuilder {
 		}
 		else if(source.type() == ModelSourceType_FromONNX){
 
-			const auto explicitBatch = 1U << static_cast<uint32_t>(nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
-			network = shared_ptr<INetworkDefinition>(builder->createNetworkV2(explicitBatch), destroyNV<INetworkDefinition>);
+			//const auto explicitBatch = 1U << static_cast<uint32_t>(nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
+			//network = shared_ptr<INetworkDefinition>(builder->createNetworkV2(explicitBatch), destroyNV<INetworkDefinition>);
+			network = shared_ptr<INetworkDefinition>(builder->createNetwork(), destroyNV<INetworkDefinition>);
 
-			vector<nvinfer1::Dims4> dimsSetup;
+			vector<nvinfer1::Dims> dimsSetup;
 			for(int i = 0; i < inputsDimsSetup.size(); ++i){
 				auto& item = inputsDimsSetup[i];
-				dimsSetup.push_back(nvinfer1::Dims4(batchSize, item.channels(), item.height(), item.width()));
+				dimsSetup.push_back(nvinfer1::Dims3(item.channels(), item.height(), item.width()));
 			}
 			
 			//from onnx is not markOutput
-			onnxParser.reset(nvonnxparser::createParser(*network, gLogger, dimsSetup), destroyNV<nvonnxparser::IParser>);
+			onnxParser.reset(nvonnxparser::createParser(*network, dimsSetup, gLogger), destroyNV<nvonnxparser::IParser>);
 			if (onnxParser == nullptr) {
 				INFO("Can not create parser.");
 				return false;
@@ -338,51 +192,22 @@ namespace TRTBuilder {
 			channel = inputDims.d[1];
 			height = inputDims.d[2];
 			width = inputDims.d[3];
-
-			Assert(batchSize == inputDims.d[0]);
 		}else{
 			LOG(LFATAL) << "unsupport inputDims.nbDims " << inputDims.nbDims;
 		}
 
+		size_t _1_GB = 1 << 30;
 		INFO("input shape: %d x %d x %d", channel, height, width);
-		INFOW("Set batch size: %d", batchSize);
-		builder->setMaxBatchSize(batchSize);
-		//builder->setMaxWorkspaceSize(1 << 30);
-
-		shared_ptr<Int8EntropyCalibrator> int8Calibrator;
-		if (mode == TRTMode_INT8) {
-			if (hasEntropyCalibrator) {
-				INFO("Using exist entropy calibrator data[%d bytes]: %s", entropyCalibratorData.size(), int8EntropyCalibratorFile.c_str());
-				int8Calibrator.reset(new Int8EntropyCalibrator(
-					entropyCalibratorData, cv::Size(width, height), channel, int8process
-				));
-			}
-			else {
-				INFO("Using image list[%d files]: %s", entropyCalibratorFiles.size(), int8ImageDirectory.c_str());
-				int8Calibrator.reset(new Int8EntropyCalibrator(
-					entropyCalibratorFiles, cv::Size(width, height), channel, int8process
-				));
-			}
-			config->setInt8Calibrator(int8Calibrator.get());
-		}
+		INFOW("Set max batch size: %d", maxBatchSize);
+		
+		builder->setMaxBatchSize(maxBatchSize);
+		config->setMaxWorkspaceSize(_1_GB);
 
 		INFOW("Build engine");
 		shared_ptr<ICudaEngine> engine(builder->buildEngineWithConfig(*network, *config), destroyNV<ICudaEngine>);
 		if (engine == nullptr) {
 			INFO("engine is nullptr");
 			return false;
-		}
-
-		if (mode == TRTMode_INT8) {
-			if (!hasEntropyCalibrator) {
-				if (!int8EntropyCalibratorFile.empty()) {
-					INFO("Save calibrator to: %s", int8EntropyCalibratorFile.c_str());
-					ccutil::savefile(int8EntropyCalibratorFile, int8Calibrator->getEntropyCalibratorData());
-				}
-				else {
-					INFO("No set entropyCalibratorFile, and entropyCalibrator will not save.");
-				}
-			}
 		}
 
 		// serialize the engine, then close everything down

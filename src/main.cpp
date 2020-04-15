@@ -1,6 +1,5 @@
 ﻿
 
-
 #include <cc_util.hpp>
 #include "infer/trt_infer.hpp"
 
@@ -23,6 +22,5 @@ int main() {
 	examples::dbface();
 	examples::center_net_coco2x_dcn();
 	examples::center_track_coco_tracking();
-
 	return 0;
 }

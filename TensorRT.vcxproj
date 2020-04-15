@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\builder\trt_builder.cpp" />
+    <ClCompile Include="src\caffeplugin\caffeplugin.cpp" />
     <ClCompile Include="src\common\cc_util.cpp" />
     <ClCompile Include="src\common\json.cpp" />
     <ClCompile Include="src\common\trt_common.cpp" />
@@ -26,16 +27,22 @@
     <ClCompile Include="src\onnx\onnx-operators_ONNX_NAMESPACE-ml.pb.cpp" />
     <ClCompile Include="src\onnx\onnx_ONNX_NAMESPACE-ml.pb.cpp" />
     <ClCompile Include="src\onnx_parser\builtin_op_importers.cpp" />
+    <ClCompile Include="src\onnx_parser\InstanceNormalization.cpp" />
     <ClCompile Include="src\onnx_parser\ModelImporter.cpp" />
     <ClCompile Include="src\onnx_parser\NvOnnxParser.cpp" />
     <ClCompile Include="src\onnx_parser\onnx2trt_utils.cpp" />
     <ClCompile Include="src\onnx_parser\OnnxAttrs.cpp" />
+    <ClCompile Include="src\onnx_parser\plugin.cpp" />
     <ClCompile Include="src\onnx_parser\ShapedWeights.cpp" />
-    <ClCompile Include="src\onnx_parser\ShapeTensor.cpp" />
-    <ClCompile Include="src\plugin\plugin.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\builder\trt_builder.hpp" />
+    <ClInclude Include="src\caffeplugin\caffeplugin.hpp" />
+    <ClInclude Include="src\caffeplugin\plugins\ChannelMultiplicationLayer.hpp" />
+    <ClInclude Include="src\caffeplugin\plugins\ClipLayer.hpp" />
+    <ClInclude Include="src\caffeplugin\plugins\DCNLayer.hpp" />
+    <ClInclude Include="src\caffeplugin\plugins\PlexShuffleLayer.hpp" />
+    <ClInclude Include="src\caffeplugin\plugins\TestPlugin.hpp" />
     <ClInclude Include="src\common\cc_util.hpp" />
     <ClInclude Include="src\common\json.hpp" />
     <ClInclude Include="src\common\trt_common.hpp" />
@@ -53,28 +60,35 @@
     <ClInclude Include="src\onnx\onnx_ONNX_NAMESPACE-ml.pb.h" />
     <ClInclude Include="src\onnx\onnx_pb.h" />
     <ClInclude Include="src\onnx_parser\builtin_op_importers.hpp" />
+    <ClInclude Include="src\onnx_parser\common.hpp" />
     <ClInclude Include="src\onnx_parser\ImporterContext.hpp" />
+    <ClInclude Include="src\onnx_parser\InstanceNormalization.hpp" />
     <ClInclude Include="src\onnx_parser\ModelImporter.hpp" />
     <ClInclude Include="src\onnx_parser\NvOnnxParser.h" />
+    <ClInclude Include="src\onnx_parser\NvOnnxParserTypedefs.h" />
     <ClInclude Include="src\onnx_parser\onnx2trt.hpp" />
+    <ClInclude Include="src\onnx_parser\onnx2trt_common.hpp" />
     <ClInclude Include="src\onnx_parser\onnx2trt_utils.hpp" />
     <ClInclude Include="src\onnx_parser\OnnxAttrs.hpp" />
     <ClInclude Include="src\onnx_parser\onnx_utils.hpp" />
+    <ClInclude Include="src\onnx_parser\plugin.hpp" />
+    <ClInclude Include="src\onnx_parser\plugin_common.hpp" />
+    <ClInclude Include="src\onnx_parser\ResizeNearest.hpp" />
+    <ClInclude Include="src\onnx_parser\serialize.hpp" />
     <ClInclude Include="src\onnx_parser\ShapedWeights.hpp" />
-    <ClInclude Include="src\onnx_parser\ShapeTensor.hpp" />
+    <ClInclude Include="src\onnx_parser\Split.hpp" />
     <ClInclude Include="src\onnx_parser\Status.hpp" />
     <ClInclude Include="src\onnx_parser\TensorOrWeights.hpp" />
     <ClInclude Include="src\onnx_parser\toposort.hpp" />
     <ClInclude Include="src\onnx_parser\trt_utils.hpp" />
     <ClInclude Include="src\onnx_parser\utils.hpp" />
-    <ClInclude Include="src\plugin\plugins\TestPlugin.hpp" />
-    <ClInclude Include="src\plugin\plugins\ChannelMultiplicationLayer.hpp" />
-    <ClInclude Include="src\plugin\plugins\ClipLayer.hpp" />
-    <ClInclude Include="src\plugin\plugins\DCNLayer.hpp" />
-    <ClInclude Include="src\plugin\plugins\PlexShuffleLayer.hpp" />
-    <ClInclude Include="src\plugin\plugin.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <CudaCompile Include="src\caffeplugin\plugins\ChannelMultiplicationLayer.cu" />
+    <CudaCompile Include="src\caffeplugin\plugins\ClipLayer.cu" />
+    <CudaCompile Include="src\caffeplugin\plugins\DCNLayer.cu" />
+    <CudaCompile Include="src\caffeplugin\plugins\PlexShuffleLayer.cu" />
+    <CudaCompile Include="src\caffeplugin\plugins\TestPlugin.cu" />
     <CudaCompile Include="src\infer\ct_detect_backend.cu" />
     <CudaCompile Include="src\infer\dbface_backend.cu" />
     <CudaCompile Include="src\infer\trt_backend.cpp" />
@@ -83,11 +97,8 @@
     <CudaCompile Include="src\onnxplugin\plugins\HSigmoid.cu" />
     <CudaCompile Include="src\onnxplugin\plugins\HSwish.cu" />
     <CudaCompile Include="src\onnxplugin\plugins\MReLU.cu" />
-    <CudaCompile Include="src\plugin\plugins\TestPlugin.cu" />
-    <CudaCompile Include="src\plugin\plugins\ChannelMultiplicationLayer.cu" />
-    <CudaCompile Include="src\plugin\plugins\ClipLayer.cu" />
-    <CudaCompile Include="src\plugin\plugins\DCNLayer.cu" />
-    <CudaCompile Include="src\plugin\plugins\PlexShuffleLayer.cu" />
+    <CudaCompile Include="src\onnx_parser\ResizeNearest.cu" />
+    <CudaCompile Include="src\onnx_parser\Split.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

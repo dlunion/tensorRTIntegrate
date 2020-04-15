@@ -8,10 +8,7 @@
 #include <NvCaffeParser.h>
 #include <NvInferPlugin.h>
 #include <cuda_fp16.h>
-
-#if defined(HAS_PLUGIN)
-#include <plugin/plugin.hpp>
-#endif
+#include <caffeplugin/caffeplugin.hpp>
 
 using namespace nvinfer1;
 using namespace std;
@@ -173,6 +170,9 @@ namespace TRTInfer {
 
 	void Tensor::resize(int n, int c, int h, int w) {
 
+		bool hasChangeShape = (this->num_ != n || this->channel_ != c || this->height_ != h || this->width_ != w);
+		if(!hasChangeShape) return;
+
 		n = n == -1 ? this->num_ : n;
 		c = c == -1 ? this->channel_ : c;
 		h = h == -1 ? this->height_ : h;
@@ -189,16 +189,12 @@ namespace TRTInfer {
 			this->head_ = DataHead_InCPU;
 		}
 
-		bool hasChangeShape = (this->num_ != n || this->channel_ != c || this->height_ != h || this->width_ != w);
 		this->num_ = n;
 		this->channel_ = c;
 		this->height_ = h;
 		this->width_ = w;
 		this->bytes_ = needed_size;
-
-		if (hasChangeShape) {
-			this->shapeString();
-		}
+		this->shapeString();
 	}
 
 	Tensor& Tensor::operator = (const Tensor& other) {
@@ -446,7 +442,8 @@ namespace TRTInfer {
 	void Tensor::setNormMat(int n, const cv::Mat& image, float mean[3], float std[3]) {
 
 		Assert(image.channels() == 3 && !image.empty() && type() == DataType::dtFloat);
-		
+		toCPU(false);
+
 		float scale = 1 / 255.0;
 		cv::Mat inputframe = image;
 		if(inputframe.size() != cv::Size(width_, height_))
@@ -469,6 +466,7 @@ namespace TRTInfer {
 
 		cv::Mat image = _image;
 		Assert(!image.empty() && n < num_ && image.channels() == channel_ && CV_MAT_DEPTH(image.type()) == CV_32F && type() == DataType::dtFloat);
+		toCPU(false);
 		
 		if (image.size() != cv::Size(width_, height_))
 			cv::resize(image, image, cv::Size(width_, height_));
@@ -639,7 +637,7 @@ namespace TRTInfer {
 
 		EngineContext* context = (EngineContext*)context_.get();
 		int inputBatchSize = inputs_[0]->num();
-		Assert(inputBatchSize == context->engine_->getMaxBatchSize());
+		Assert(inputBatchSize <= context->engine_->getMaxBatchSize());
 
 		for (int i = 0; i < outputs_.size(); ++i) {
 			outputs_[i]->resize(inputBatchSize);

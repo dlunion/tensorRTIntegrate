@@ -9,13 +9,13 @@
 ## Re-implement
 ##### [CenterNet : ctdet_coco_dla_2x](https://github.com/xingyizhou/CenterNet)
 
-![image1](workspace/centernet.coco2x.dcn.17790319373_bd19b24cfc_k.jpg)
+![image1](workspace/results/1.centernet.coco2x.dcn.jpg)
 
 <br/>
 
 ##### [CenterTrack: coco_tracking](https://github.com/xingyizhou/CenterTrack)
 
-![coco.tracking.jpg](workspace/coco.tracking.jpg)
+![coco.tracking.jpg](workspace/results/coco.tracking.jpg)
 
 * [coco_tracking.onnx download](http://zifuture.com:1000/fs/public_models/coco_tracking.onnx)
 
@@ -25,7 +25,7 @@
 
 ##### [DBFace](https://github.com/dlunion/DBFace)
 
-![selfie.draw.jpg](workspace/selfie.draw.jpg)
+![selfie.draw.jpg](workspace/results/selfie.draw.jpg)
 
 
 
@@ -34,7 +34,7 @@
 install protobuf == 3.11.4 (or >= 3.8.x, But it's more troublesome)
 
 ```bash
-bash getDLADCN.sh
+bash scripts/getALL.sh
 make run -j32
 ```
 
@@ -47,16 +47,25 @@ auto engine = TRTInfer::loadEngine("models/efficientnet-b0.fp32.trtmodel");
 float mean[3] = {0.485, 0.456, 0.406};
 float std[3] = {0.229, 0.224, 0.225};
 Mat image = imread("img.jpg");
-engine->input()->setNormMat(0, image, mean, std);
+auto input = engine->input();
+
+// multi batch sample
+input->resize(2);
+input->setNormMatGPU(0, image, mean, std);
+input->setNormMatGPU(1, image, mean, std);
+
 engine->forward();
-engine->output(0)->print();
+
+// get result and copy to cpu
+engine->output(0)->cpu<float>();
+engine->tensor("hm")->cpu<float>();
 ```
 
 <br/>
 
 ## Environment
 
-* tensorRT7.0.0.11
+* tensorRT7.0 or tensorRT6.0
 * opencv3.4.6
 * cudnn7.6.3
 * cuda10.0

@@ -100,9 +100,7 @@ namespace examples {
 			INFO("detectBoundingbox failure call, model is nullptr");
 			return vector<vector<ccutil::BBox>>();
 		}
-
-		int batchSize = boundingboxDetect_->input()->num();
-		Assert(batchSize == images.size());
+		boundingboxDetect_->input()->resize(images.size());
 
 		vector<Size> imsize;
 		for (int i = 0; i < images.size(); ++i) {
@@ -138,8 +136,7 @@ namespace examples {
 			TRTBuilder::compileTRT(
 				TRTBuilder::TRTMode_FP32, {}, batchSize,
 				TRTBuilder::ModelSource("models/dladcnv2.onnx"),
-				modelFile, nullptr, "", "",
-				{TRTBuilder::InputDims(3, 512, 512)}
+				modelFile, {TRTBuilder::InputDims(3, 512, 512)}
 			);
 		}
 
@@ -151,32 +148,29 @@ namespace examples {
 		}
 
 		INFO("forward...");
-		Mat image = imread("www.jpg");
-		Mat person = imread("17790319373_bd19b24cfc_k.jpg");
-		auto input = engine->input();
-		auto output = engine->tensor("hm");
+		vector<Mat> images{
+			imread("imgs/www.jpg"),
+			imread("imgs/17790319373_bd19b24cfc_k.jpg")
+		};
 
 		TRTInfer::CTDetectBackend backend(engine->getCUStream());
-		auto imobjs = detectBoundingboxOptim(engine, {image, person}, 0.3, 100, &backend);  // 43.86 ms
+		auto imobjs = detectBoundingboxOptim(engine, images, 0.3, 100, &backend);  // 43.86 ms
 		
-		Mat ims[] = {image, person};
-		for (int j = 0; j < 2; ++j) {
+		for (int j = 0; j < images.size(); ++j) {
 			auto& objs = imobjs[j];
 			objs = ccutil::nms(objs, 0.5);
 
 			INFO("objs.length = %d", objs.size());
 			for (int i = 0; i < objs.size(); ++i) {
 				auto& obj = objs[i];
-				ccutil::drawbbox(ims[j], obj);
+				ccutil::drawbbox(images[j], obj);
 			}
+			imwrite(ccutil::format("results/%d.centernet.coco2x.dcn.jpg", j), images[j]);
 		}
 
-		imwrite("centernet.coco2x.dcn.www.jpg", image);
-		imwrite("centernet.coco2x.dcn.17790319373_bd19b24cfc_k.jpg", person);
-
 #ifdef _WIN32
-		cv::imshow("dla dcn detect.www", image);
-		cv::imshow("dla dcn detect.person", person);
+		cv::imshow("dla dcn detect 1", images[0]);
+		cv::imshow("dla dcn detect 2", images[1]);
 		cv::waitKey();
 		cv::destroyAllWindows();
 #endif

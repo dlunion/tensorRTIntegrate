@@ -1,0 +1,25 @@
+W[2020-04-15 21:47:53:g:\code\tensorrt\tensorrtintegrate\src\examples\onnx.cpp:19]:onnx to trtmodel...
+W[2020-04-15 21:47:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:96]:Build FP32 trtmodel.
+I[2020-04-15 21:47:54:G:/code/TensorRT/tensorRTIntegrate/src/onnxplugin/plugins/MReLU.cu:33]:init MReLU config: {"kernel_size": 3, "eps": 0.03, "other": "Hello Onnx Plugin"}
+I[2020-04-15 21:47:54:G:/code/TensorRT/tensorRTIntegrate/src/onnxplugin/plugins/MReLU.cu:34]:MReLU weights = 1[1 x 1 x 1 x 1]
+I[2020-04-15 21:47:54:G:/code/TensorRT/tensorRTIntegrate/src/onnxplugin/plugins/MReLU.cu:38]:MReLU kernel_size: 3
+I[2020-04-15 21:47:54:G:/code/TensorRT/tensorRTIntegrate/src/onnxplugin/plugins/MReLU.cu:39]:MReLU eps: 0.03
+I[2020-04-15 21:47:54:G:/code/TensorRT/tensorRTIntegrate/src/onnxplugin/plugins/MReLU.cu:40]:MReLU other: Hello Onnx Plugin
+I[2020-04-15 21:47:54:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:200]:input shape: 3 x 5 x 5
+W[2020-04-15 21:47:54:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:201]:Set max batch size: 4
+W[2020-04-15 21:47:54:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:206]:Build engine
+I[2020-04-15 21:47:55:g:\code\tensorrt\tensorrtintegrate\src\examples\onnx.cpp:26]:done.
+I[2020-04-15 21:47:55:g:\code\tensorrt\tensorrtintegrate\src\examples\onnx.cpp:28]:load model: models/demo.fp32.trtmodel
+I[2020-04-15 21:47:55:G:/code/TensorRT/tensorRTIntegrate/src/onnxplugin/plugins/MReLU.cu:33]:init MReLU config: {"kernel_size": 3, "eps": 0.03, "other": "Hello Onnx Plugin"}
+I[2020-04-15 21:47:55:G:/code/TensorRT/tensorRTIntegrate/src/onnxplugin/plugins/MReLU.cu:34]:MReLU weights = 1[1 x 1 x 1 x 1]
+I[2020-04-15 21:47:55:G:/code/TensorRT/tensorRTIntegrate/src/onnxplugin/plugins/MReLU.cu:38]:MReLU kernel_size: 3
+I[2020-04-15 21:47:55:G:/code/TensorRT/tensorRTIntegrate/src/onnxplugin/plugins/MReLU.cu:39]:MReLU eps: 0.03
+I[2020-04-15 21:47:55:G:/code/TensorRT/tensorRTIntegrate/src/onnxplugin/plugins/MReLU.cu:40]:MReLU other: Hello Onnx Plugin
+W[2020-04-15 21:47:55:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Current optimization profile is: 0. Please ensure there are no enqueued operations pending in this context prior to switching profiles
+I[2020-04-15 21:47:55:g:\code\tensorrt\tensorrtintegrate\src\examples\onnx.cpp:35]:forward...
+I[2020-04-15 21:47:55:g:\code\tensorrt\tensorrtintegrate\src\examples\onnx.cpp:42]:done.
+W[2020-04-15 21:47:56:g:\code\tensorrt\tensorrtintegrate\src\examples\dbface.cpp:140]:models/dbface.onnx not found, download url: http://zifuture.com:1000/fs/public_models/dbface.onnx
+W[2020-04-15 21:47:56:g:\code\tensorrt\tensorrtintegrate\src\examples\center_net_coco2x_dcn.cpp:121]:onnx to trtmodel...
+W[2020-04-15 21:47:56:g:\code\tensorrt\tensorrtintegrate\src\examples\center_net_coco2x_dcn.cpp:132]:models/dladcnv2.onnx not found, download url: http://zifuture.com:1000/fs/public_models/dladcnv2.onnx or use centerNetDLADCNOnnX/dladcn_export_onnx.py to generate
+W[2020-04-15 21:47:56:g:\code\tensorrt\tensorrtintegrate\src\examples\center_track_coco_tracking.cpp:131]:onnx to trtmodel...
+W[2020-04-15 21:47:56:g:\code\tensorrt\tensorrtintegrate\src\examples\center_track_coco_tracking.cpp:139]:models/coco_tracking.onnx not found, download url: http://zifuture.com:1000/fs/public_models/coco_tracking.onnx

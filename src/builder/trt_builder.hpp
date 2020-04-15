@@ -48,8 +48,7 @@ namespace TRTBuilder {
 
 	enum TRTMode {
 		TRTMode_FP32,
-		TRTMode_FP16,
-		TRTMode_INT8
+		TRTMode_FP16
 	};
 
 	const char* modeString(TRTMode type);
@@ -60,9 +59,6 @@ namespace TRTBuilder {
 		unsigned int batchSize,
 		const ModelSource& source,
 		const std::string& savepath,
-		Int8Process int8process = nullptr,					
-		const std::string& int8ImageDirectory = "",
-		const std::string& int8EntropyCalibratorFile = "",
 		const std::vector<InputDims> inputsDimsSetup = {});
 };
 

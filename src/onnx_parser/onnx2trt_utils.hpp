@@ -23,276 +23,447 @@
 #pragma once
 
 #include "ShapedWeights.hpp"
-#include "Status.hpp"
 #include "trt_utils.hpp"
+#include "OnnxAttrs.hpp"
 
-#include <NvInfer.h>
 #include <onnx/onnx_pb.h>
-//#include <onnx/onnxifi.h>
+#include <onnx/onnxifi.h>
+#include <NvInfer.h>
 
-#include <cstring> // For std::memcpy
 #include <iostream>
-#include <numeric>
-#include <sstream>
+using std::cerr;
+using std::endl;
 
-#define _ONNX2TRT_LOG_IMPL_(msg, severity)                                                                                             \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        std::stringstream ss{};                                                                                        \
-        ss << __FILENAME__ << ":" << __LINE__ << ": " << msg;                                                          \
-        ctx->logger().log(severity, ss.str().c_str());                                                                 \
-    } while (0)
-
-#define LOG_VERBOSE(msg) _ONNX2TRT_LOG_IMPL_(msg, nvinfer1::ILogger::Severity::kVERBOSE)
-#define LOG_INFO(msg) _ONNX2TRT_LOG_IMPL_(msg, nvinfer1::ILogger::Severity::kINFO)
-#define LOG_WARNING(msg) _ONNX2TRT_LOG_IMPL_(msg, nvinfer1::ILogger::Severity::kWARNING)
-#define LOG_ERROR(msg) _ONNX2TRT_LOG_IMPL_(msg, nvinfer1::ILogger::Severity::kERROR)
-
-// Overloads of operator<< on TensorRT types must be defined inside nvinfer1
-// so that argument-dependent lookup works as expected. Declared static to
-// avoid symbol clashing when statically linking with other TensorRT libraries
-namespace nvinfer1
-{
-
-template <typename T>
-static std::ostream& printSequence(std::ostream& stream, const T* begin, int count)
-{
-    stream << "(";
-    if (count > 0)
+class CeilingPoolDim:public nvinfer1::IOutputDimensionsFormula{
+public:
+  nvinfer1::DimsHW compute(nvinfer1::DimsHW inputDims, nvinfer1::DimsHW kernelSize,
+    nvinfer1::DimsHW stride, nvinfer1::DimsHW padding, nvinfer1::DimsHW dilation, const char* layerName) const
+  {
+    nvinfer1::DimsHW outputDims;
+    for (int dimension = 0; dimension < inputDims.nbDims; dimension++)
     {
-        std::copy_n(begin, count - 1, std::ostream_iterator<T>(stream, ", "));
-        stream << begin[count - 1];
+      outputDims.d[dimension] = static_cast<int>(ceil((inputDims.d[dimension] + padding.d[dimension] * 2.0 - kernelSize.d[dimension]) / stride.d[dimension] + 1.0));
     }
-    stream << ")";
-    return stream;
-}
-
-static std::ostream& operator<<(std::ostream& stream, const nvinfer1::Dims& shape)
-{
-    return printSequence(stream, shape.d, shape.nbDims);
-}
-
-static std::ostream& operator<<(std::ostream& stream, const nvinfer1::Permutation& perm)
-{
-    return printSequence(stream, perm.order, nvinfer1::Dims::MAX_DIMS);
-}
-
-static std::ostream& operator<<(std::ostream& stream, const nvinfer1::DataType& dtype)
-{
-    switch (dtype)
-    {
-    case nvinfer1::DataType::kFLOAT: return stream << "float32";
-    case nvinfer1::DataType::kHALF: return stream << "float16";
-    case nvinfer1::DataType::kINT8: return stream << "int8";
-    case nvinfer1::DataType::kINT32: return stream << "int32";
-    case nvinfer1::DataType::kBOOL: return stream << "bool";
-    default: throw std::runtime_error("Unknown dtype");
-    }
-}
-
-} // namespace nvinfer1
-
-namespace onnx2trt
-{
-
-// Helper function to calculate the volume of a Dims object
-int64_t volume(const nvinfer1::Dims& dims);
-
-// Helper function to get the size in bytes of an ONNX datatype
-int getDtypeSize(int32_t onnxDtype);
-
-// Helper function to add a scalar into TRT through a constant layer.
-template <typename ScalarType>
-inline nvinfer1::IConstantLayer* addConstantScalar(
-    IImporterContext* ctx, ScalarType scalar, ShapedWeights::DataType type, nvinfer1::Dims shape = nvinfer1::Dims{0})
-{
-    assert(volume(shape) == 1 && "Cannot add constant scalar with a shape that has volume > 1");
-    ShapedWeights scalarWeights = ctx->createTempWeights(type, shape);
-    static_cast<ScalarType*>(scalarWeights.values)[0] = static_cast<ScalarType>(scalar);
-    return ctx->network()->addConstant(scalarWeights.shape, scalarWeights);
-}
-
-// Helper function to create a tensor given a vector of values and a shape.
-template <typename ScalarType>
-inline nvinfer1::IConstantLayer* addConstant(
-    IImporterContext* ctx, const std::vector<ScalarType>& values, ShapedWeights::DataType type, nvinfer1::Dims shape)
-{
-    assert(volume(shape) == static_cast<int64_t>(values.size()) && "Shape does not match number of values provided");
-    assert(sizeof(ScalarType) == getDtypeSize(type) && "ONNX dtype does not have the same size as the value type");
-    ShapedWeights weights = ctx->createTempWeights(type, shape);
-    std::memcpy(weights.values, values.data(), values.size() * sizeof(ScalarType));
-    return ctx->network()->addConstant(weights.shape, weights);
-}
-
-enum ScaleOp
-{
-    kSHIFT,
-    kSCALE,
-    kPOWER,
+    return outputDims;
+  }
 };
 
-// Helper function to import ONNX activation nodes into TRT
-NodeImportResult activationHelper(IImporterContext* ctx, const ::ONNX_NAMESPACE::NodeProto& node,
-    std::vector<TensorOrWeights>& inputs, nvinfer1::ActivationType op, float* alpha = nullptr, float* beta = nullptr);
+inline std::ostream& operator<<(std::ostream& stream, nvinfer1::Dims const& shape) {
+  if( shape.nbDims == 0 ) {
+    return stream;
+  }
+  stream << "(" << shape.d[0];
+  for( int i=1; i<shape.nbDims; ++i ) {
+    stream << ", " << shape.d[i];
+  }
+  stream << ")";
+  return stream;
+}
 
-// Add clipping to a tensor if clip is a valid value.
-nvinfer1::ITensor* addClip(IImporterContext* ctx, nvinfer1::ITensor* input, float clip);
+inline std::ostream& operator<<(std::ostream& stream, nvinfer1::DataType const& dtype) {
+  switch( dtype ) {
+  case nvinfer1::DataType::kFLOAT: return stream << "float32";
+  case nvinfer1::DataType::kHALF:  return stream << "float16";
+  case nvinfer1::DataType::kINT8:  return stream << "int8";
+#if NV_TENSORRT_MAJOR >= 4
+  case nvinfer1::DataType::kINT32: return stream << "int32";
+#endif
+  default: throw std::runtime_error("Unknown dtype");
+  }
+}
 
-// Helper function to import ArgMax and ArgMin nodes into TRT
-NodeImportResult argMinMaxHelper(IImporterContext* ctx, const ::ONNX_NAMESPACE::NodeProto& node,
-    std::vector<TensorOrWeights>& inputs, nvinfer1::TopKOperation op);
+// TODO: Remove this when finished debugging
+inline std::ostream& operator<<(std::ostream& stream, nvinfer1::Permutation const& perm) {
+  int ndims = nvinfer1::Dims::MAX_DIMS;
+  stream << "(" << perm.order[0];
+  for( int i=1; i<ndims; ++i ) {
+    stream << ", " << perm.order[i];
+  }
+  stream << ")";
+  return stream;
+}
+/*
+// TODO: Remove this when finished debugging
+inline std::ostream& operator<<(std::ostream& stream, google::protobuf::Message const& message) {
+  stream << print_onnx_to_string(message);
+  return stream;
+}
+*/
+namespace onnx2trt {
 
-// Helper function to broadcast two tensors to the larger one's shape
-Status broadcastTensors(IImporterContext* ctx, nvinfer1::ITensor*& t1, nvinfer1::ITensor*& t2);
+inline int get_dtype_size(int32_t onnx_dtype) {
+  switch( onnx_dtype ) {
+  case ::ONNX_NAMESPACE::TensorProto::FLOAT16:    return 2;
+  case ::ONNX_NAMESPACE::TensorProto::FLOAT:      return 4;
+  case ::ONNX_NAMESPACE::TensorProto::DOUBLE:     return 8;
+  case ::ONNX_NAMESPACE::TensorProto::COMPLEX64:  return 8;
+  case ::ONNX_NAMESPACE::TensorProto::COMPLEX128: return 16;
+  case ::ONNX_NAMESPACE::TensorProto::UINT8:      return 1;
+  case ::ONNX_NAMESPACE::TensorProto::INT8:       return 1;
+  case ::ONNX_NAMESPACE::TensorProto::UINT16:     return 2;
+  case ::ONNX_NAMESPACE::TensorProto::INT16:      return 2;
+  case ::ONNX_NAMESPACE::TensorProto::UINT32:     return 4;
+  case ::ONNX_NAMESPACE::TensorProto::INT32:      return 4;
+  case ::ONNX_NAMESPACE::TensorProto::UINT64:     return 8;
+  case ::ONNX_NAMESPACE::TensorProto::INT64:      return 8;
+  // TODO: Add BOOL if necessary...
+    // TODO: Some sort of error handling
+  default: return -1;//throw std::invalid_argument("Unsupported TRT data type: " +
+                     //                  std::to_string((int)trt_dtype));
+  }
+}
 
-// Helper function to broadcast three tensors to the largest one's shape
-Status broadcastTensors(IImporterContext* ctx, nvinfer1::ITensor*& t1, nvinfer1::ITensor*& t2, nvinfer1::ITensor*& t3);
+inline const char* get_dtype_name(int32_t onnx_dtype) {
+  switch( onnx_dtype ) {
+  case ::ONNX_NAMESPACE::TensorProto::FLOAT:      return "FLOAT";
+  case ::ONNX_NAMESPACE::TensorProto::UINT8:      return "UINT8";
+  case ::ONNX_NAMESPACE::TensorProto::INT8:       return "INT8";
+  case ::ONNX_NAMESPACE::TensorProto::UINT16:     return "UINT16";
+  case ::ONNX_NAMESPACE::TensorProto::INT16:      return "INT16";
+  case ::ONNX_NAMESPACE::TensorProto::INT32:      return "INT32";
+  case ::ONNX_NAMESPACE::TensorProto::INT64:      return "INT64";
+  case ::ONNX_NAMESPACE::TensorProto::STRING:     return "STRING";
+  case ::ONNX_NAMESPACE::TensorProto::BOOL:       return "BOOL";
+  case ::ONNX_NAMESPACE::TensorProto::FLOAT16:    return "FLOAT16";
+  case ::ONNX_NAMESPACE::TensorProto::DOUBLE:     return "DOUBLE";
+  case ::ONNX_NAMESPACE::TensorProto::UINT32:     return "UINT32";
+  case ::ONNX_NAMESPACE::TensorProto::UINT64:     return "UINT64";
+  case ::ONNX_NAMESPACE::TensorProto::COMPLEX64:  return "COMPLEX64";
+  case ::ONNX_NAMESPACE::TensorProto::COMPLEX128: return "COMPLEX128";
+  default: return "<UNKNOWN>";
+  }
+}
 
-// Helper function to check that linear resize can be used
-bool canUseLinearResize(const size_t scaleSize, const float* scaleFactors);
+inline nvinfer1::ITensor* reshape_tensor(IImporterContext* ctx,
+               nvinfer1::ITensor& tensor,
+               nvinfer1::Dims shape) {
+  if( shape == tensor.getDimensions() ) {
+    return &tensor;
+  }
+  nvinfer1::IShuffleLayer* layer = ctx->network()->addShuffle(tensor);
+  if( !layer ) {
+    return nullptr;
+  }
+  layer->setReshapeDimensions(shape);
+  return layer->getOutput(0);
+}
 
-// Helper function for constantOfShape operator. Input shape must be a shape tensor
-nvinfer1::ITensor* constantOfShape(IImporterContext* ctx, nvinfer1::ITensor* constant, nvinfer1::ITensor* shape);
+inline void broadcast_tensors(IImporterContext* ctx, nvinfer1::ITensor*& t1, nvinfer1::ITensor*& t2)
+{
+    if (t1->getDimensions().nbDims == t2->getDimensions().nbDims)
+    {
+        return;
+    }
+    nvinfer1::ITensor* largeTensor;
+    nvinfer1::ITensor* smallTensor;
+    if (t1->getDimensions().nbDims > t2->getDimensions().nbDims)
+    {
+        largeTensor = t1;
+        smallTensor = t2;
+    }
+    else
+    {
+        largeTensor = t2;
+        smallTensor = t1;
+    }
 
-// Helper function to convert an ONNX axis into a TRT axis
-Status convertAxis(int& axis, int nbDims);
+    nvinfer1::Dims largeDims = largeTensor->getDimensions();
+    nvinfer1::Dims smallDims = smallTensor->getDimensions();
+    // Create placeholder dimensions to check broadcasting
+    nvinfer1::Dims newDims{largeDims.nbDims, {1, 1, 1, 1, 1, 1, 1, 1}};
 
-// Helper function to convert an ONNX datatype into a TRT datatype
-bool convertDtype(int32_t onnx_dtype, nvinfer1::DataType* trt_dtype);
+    int i(0), j(0);
+    while (i < smallDims.nbDims && j < largeDims.nbDims)
+    {
+        if (smallDims.d[i] == largeDims.d[j])
+        {
+            newDims.d[j] = largeDims.d[j];
+            i++;
+            j++;
+        }
+        else
+        {
+            j++;
+        }
+    }
 
-// Helper function to convert INT64 weight values into INT32
-int32_t* convertINT64(const int64_t* weightValues, nvinfer1::Dims shape, IImporterContext* ctx);
+    t1 == smallTensor ? t1 = reshape_tensor(ctx, *t1, newDims) : t2 = reshape_tensor(ctx, *t2, newDims);
+}
 
-// Helper function to convert ONNX padding into TRT padding
-bool convertOnnxPadding(
-    const std::vector<int64_t>& onnxPadding, nvinfer1::Dims2* begPadding, nvinfer1::Dims2* endPadding);
+inline bool check_for_input(::ONNX_NAMESPACE::NodeProto const& node, std::string const& input_node)
+{
+  for (auto input : node.input())
+  {
+    if (input_node == input)
+    {
+      return true;
+    }
+  }
+  return false;
+}
 
-// Helper function to convert an ONNX weight into a ShapedWeights object
-bool convertOnnxWeights(
-    const ::ONNX_NAMESPACE::TensorProto& onnxTensor, onnx2trt::ShapedWeights* weights, IImporterContext* ctx);
+inline bool convert_dtype(int32_t onnx_dtype,
+                          nvinfer1::DataType* trt_dtype) {
+  switch( onnx_dtype ) {
+  case ::ONNX_NAMESPACE::TensorProto::FLOAT:   *trt_dtype = nvinfer1::DataType::kFLOAT; break;
+  case ::ONNX_NAMESPACE::TensorProto::INT8:    *trt_dtype = nvinfer1::DataType::kINT8;  break;
+  case ::ONNX_NAMESPACE::TensorProto::FLOAT16: *trt_dtype = nvinfer1::DataType::kHALF;  break;
+#if NV_TENSORRT_MAJOR >= 4
+  case ::ONNX_NAMESPACE::TensorProto::INT32:   *trt_dtype = nvinfer1::DataType::kINT32; break;
+  // See ShapedWeights.cpp for sanity check if all values can be safetly downcasted to INT32
+  case ::ONNX_NAMESPACE::TensorProto::INT64:   *trt_dtype = nvinfer1::DataType::kINT32; break;
+#endif
+  default:
+    cerr << "Unsupported ONNX data type: " << get_dtype_name(onnx_dtype)
+         << " (" << std::to_string(onnx_dtype) << ")" << endl;
+    return false;
+  }
+  return true;
+}
 
-// Helper function to convert multi input convolution
-NodeImportResult convMultiInput(
-    IImporterContext* ctx, const ::ONNX_NAMESPACE::NodeProto& node, std::vector<TensorOrWeights>& inputs);
+inline bool convert_input_dtype(int32_t onnx_dtype,
+                          nvinfer1::DataType* trt_dtype) {
+  switch( onnx_dtype ) {
+  case ::ONNX_NAMESPACE::TensorProto::FLOAT:   *trt_dtype = nvinfer1::DataType::kFLOAT; break;
+  case ::ONNX_NAMESPACE::TensorProto::INT8:    *trt_dtype = nvinfer1::DataType::kINT8;  break;
+  case ::ONNX_NAMESPACE::TensorProto::FLOAT16: *trt_dtype = nvinfer1::DataType::kHALF;  break;
+#if NV_TENSORRT_MAJOR >= 4
+  case ::ONNX_NAMESPACE::TensorProto::INT32:   *trt_dtype = nvinfer1::DataType::kINT32; break;
+#endif
+  default:
+    cerr << "Unsupported ONNX data type: " << get_dtype_name(onnx_dtype)
+         << " (" << std::to_string(onnx_dtype) << ")" << endl;
+    return false;
+  }
+  return true;
+}
 
-// Helper function to convert a 1D tensor into a scalar
-nvinfer1::ITensor* convertToScalar(IImporterContext* ctx, nvinfer1::ITensor* inpTensor);
+template<typename OnnxDims>
+inline bool convert_dims(OnnxDims const& onnx_dims, nvinfer1::Dims& trt_dims) {
+  enum { BATCH_DIM = 0 };
+  std::vector<int> onnx_dims_vector;
+  for( auto const& onnx_dim : onnx_dims ) {
+    // TODO: Unknown dimensions are represented using onnx_dim.dim_param
+    // Dynamically sized inputs are currently not supported. Catch these cases
+    // as onnx_dim.dim_value() == 0 on non-batch dimensions and throw an error.
+    if (onnx_dims_vector.empty() || onnx_dim.dim_value() != 0)
+    {
+      onnx_dims_vector.push_back(onnx_dim.dim_value());
+    }
+    else
+    {
+      return false;
+    }
+  }
+  trt_dims.nbDims = onnx_dims_vector.size();
+  if (trt_dims.nbDims >= nvinfer1::Dims::MAX_DIMS)
+  {
+    return false;
+  }
+  std::copy(onnx_dims_vector.begin(), onnx_dims_vector.end(), trt_dims.d);
+  // Remove batch dimension from trt_dims.
+  trt_dims = set_dims_CHW(remove_dim(trt_dims, BATCH_DIM));
+  return true;
+}
 
-// Helper function to convert a ShapedWeights object into a tensor
-nvinfer1::ITensor& convertToTensor(TensorOrWeights& input, IImporterContext* ctx);
+inline bool convert_weight_descriptor(onnxTensorDescriptorV1 const &desc,
+                                      onnx2trt::ShapedWeights *weights) {
+  nvinfer1::Dims shape;
+  shape.nbDims = desc.dimensions;
+  // Special case for scalars
+  if( shape.nbDims == 0 ) {
+    shape.nbDims = 1;
+    shape.d[0] = 1;
+    shape.type[0] = nvinfer1::DimensionType::kCHANNEL;
+  } else {
+    std::copy(desc.shape, desc.shape + desc.dimensions, shape.d);
+  }
 
-// Helper function to convert a ShapedWeights object into a scalar
-nvinfer1::ITensor* convertToScalar(TensorOrWeights& input, IImporterContext* ctx);
+  size_t element_count = 1;
+  for (int i = 0; i < shape.nbDims; ++i) {
+    element_count *= shape.d[i];
+  }
 
-// Helper function to convert an ONNX weight descriptor into a ShapedWeights object
-bool convertWeightDescriptor(
-    onnxTensorDescriptorV1 const& desc, onnx2trt::ShapedWeights* weights, IImporterContext* ctx);
+  void* data_ptr;
+  size_t nbytes;
+  int32_t dtype;
+  data_ptr = (void*)(desc. buffer);
+  if (desc.dataType == ONNXIFI_DATATYPE_FLOAT32) {
+    dtype = ::ONNX_NAMESPACE::TensorProto::FLOAT;
+    nbytes = element_count * sizeof(float);
+  } else if (desc.dataType == ONNXIFI_DATATYPE_FLOAT16) {
+    dtype = ::ONNX_NAMESPACE::TensorProto::FLOAT16;
+    nbytes = element_count * sizeof(float) / 2;
+  } else if (desc.dataType == ONNXIFI_DATATYPE_INT32) {
+    dtype = ::ONNX_NAMESPACE::TensorProto::INT32;
+    nbytes = element_count * sizeof(int32_t);
+  } else if (desc.dataType == ONNXIFI_DATATYPE_INT64) {
+    dtype = ::ONNX_NAMESPACE::TensorProto::INT64;
+    nbytes = element_count * sizeof(int64_t);
+  } else {
+    // Unsupported format
+    return false;
+  }
 
-// Helper function to provide a ceiling-rounding division between two integers
-int divCeil(int n, int d);
+  onnx2trt::ShapedWeights trt_weights(dtype, data_ptr, shape);
+  (void)nbytes;
+  assert(trt_weights.size_bytes() == nbytes);
+  *weights = trt_weights;
+  return true;
+}
 
-// Helper function to check that the input data types for an elementwise operation are supported
-bool elementwiseCheck(const std::vector<TensorOrWeights>& inputs, const nvinfer1::ElementWiseOperation op);
+inline bool convert_onnx_weights(::ONNX_NAMESPACE::TensorProto const& onnx_tensor,
+    onnx2trt::ShapedWeights* weights) {
+        nvinfer1::Dims shape;
+        shape.nbDims = onnx_tensor.dims().size();
+        std::copy(onnx_tensor.dims().begin(), onnx_tensor.dims().end(),
+        shape.d);
+        auto dtype = onnx_tensor.data_type();
+        void* data_ptr; // TODO: See if can make const*
+        size_t nbytes;
+        if( onnx_tensor.raw_data().size() > 0 )
+        {
+            data_ptr = (void*)onnx_tensor.raw_data().data();
+            nbytes = onnx_tensor.raw_data().size();
+        }
+        else if( onnx_tensor.float_data().size() > 0 )
+        {
+            assert(onnx_tensor.data_type() == ::ONNX_NAMESPACE::TensorProto::FLOAT);
+            data_ptr = (void*)onnx_tensor.float_data().data();
+            nbytes = onnx_tensor.float_data().size() * sizeof(float);
+        }
+        else if( onnx_tensor.int32_data().size() > 0 )
+        {
+            // TODO: Need special handling for int8 or float16 stored as int32_data
+            assert(get_dtype_size(dtype) == 4);
+            data_ptr = (void*)onnx_tensor.int32_data().data();
+            nbytes = onnx_tensor.int32_data().size() * sizeof(int32_t);
+        }
+        else if( onnx_tensor.int64_data().size() > 0 )
+        {
+            assert(onnx_tensor.data_type() == ::ONNX_NAMESPACE::TensorProto::INT64);
+            data_ptr = (void*)onnx_tensor.int64_data().data();
+            nbytes = onnx_tensor.int64_data().size() * sizeof(int64_t);
+        }
+        else
+        {
+            // Unsupported ONNX tensor format!
+            return false;
+        }
 
-// Helper function to import an ONNX elementwise op into TRT
-NodeImportResult elementwiseHelper(IImporterContext* ctx, ::ONNX_NAMESPACE::NodeProto const& node,
-    std::vector<TensorOrWeights>& inputs, nvinfer1::ElementWiseOperation binary_op);
+        onnx2trt::ShapedWeights trt_weights(dtype, data_ptr, shape);
+        (void)nbytes;
+        assert(trt_weights.size_bytes() == nbytes);
+        *weights = trt_weights;
+        return true;
+    }
 
-// Helper function to flatten a tensor on a given axis
-nvinfer1::ITensor* flattenTensor(IImporterContext* ctx, nvinfer1::ITensor& tensor, int axis = 0);
+// Returns the input if it is already a tensor. If it is of type ShapedWeights, adds a new
+// constant layer to the TRT network and returns its output.
+inline nvinfer1::ITensor& convertToTensor(TensorOrWeights& input, IImporterContext* ctx)
+{
+    if (input.is_tensor())
+    {
+        return input.tensor();
+    }
+    else
+    {
+        // Handle non-tensor indices input by adding a new constant layer to the network.
+        const ShapedWeights& weights = input.weights();
+        return *(ctx->network()->addConstant(weights.shape, weights)->getOutput(0));
+    }
 
-// Gathers the specified dimension from a shape tensor. e.g. gatherDimension(shape=(7, 6, 5), dim=2) would return 5.
-// shape specifies the shape of the returned Tensor. Must have a volume of 1.
-nvinfer1::ITensor* gatherDimension(
-    IImporterContext* ctx, nvinfer1::ITensor* shapeTensor, int dim, nvinfer1::Dims shape);
+}
 
-// Helper function to generate padding values for convTranspose
-void generatePadding(nvinfer1::Dims input_dims, nvinfer1::Dims output_shape, nvinfer1::Dims kernel_size,
-    nvinfer1::Dims strides, nvinfer1::Dims dilations, const int nbSpatialDims, nvinfer1::Dims& beg_padding,
-    nvinfer1::Dims& end_padding, nvinfer1::Dims& output_padding, nvinfer1::PaddingMode paddingMode);
+inline nvinfer1::ITensor& convert_output_weight_to_tensor(TensorOrWeights& input, IImporterContext* ctx)
+{
+    if (input.is_tensor())
+    {
+        return input.tensor();
+    }
+    else
+    {
+        // Convert weight output to tensor output. Strip batch dimension here.
+        const ShapedWeights& weights = input.weights();
+        nvinfer1::Dims tensor_shape = weights.shape;
+        tensor_shape= set_dims_CHW(remove_dim(tensor_shape, 0));
+        return *(ctx->network()->addConstant(tensor_shape, weights)->getOutput(0));
+    }
 
-// Helper function to get default ONNX activation alpha values
-float getActivationDefaultAlpha(nvinfer1::ActivationType type);
+}
 
-// Helper function to get default ONNX activation beta values
-float getActivationDefaultBeta(nvinfer1::ActivationType type);
+inline int div_ceil(int n, int d) {
+  return (n - 1) / d + 1;
+}
 
-// Helper function to get the length of the specified axis
-nvinfer1::ITensor* getAxisLength(
-    IImporterContext* ctx, nvinfer1::ITensor* inpTensor, int axis, nvinfer1::Dims shape = nvinfer1::Dims{0});
+// Convert an ONNX axis into a TRT axis
+inline Status convert_axis(int& axis, int nbDims)
+{
+  // Support negative indexing
+  if (axis < 0)
+  {
+    axis += nbDims;
+  }
+  // Subtract 1 from the axis given a postive ONNX axis to strip out batch dimension
+  else
+  {
+    axis = axis - 1;
+  }
+  ASSERT(axis >= 0 && axis < nbDims, ErrorCode::kUNSUPPORTED_NODE);
+  return Status::success();
+}
 
-// Helper function to calculate the output size of a convolution node given its attributes
-int getConvOutputSize(int input_size, int filter_size, int stride, int dilation_rate, int total_padding);
+inline int get_conv_output_size(int input_size, int filter_size,
+                                int stride, int dilation_rate,
+                                int total_padding) {
+  // This is based on the CUDNN formula
+  int effective_input_size  = input_size + total_padding;
+  int effective_filter_size = (filter_size - 1) * dilation_rate + 1;
+  return div_ceil(effective_input_size - (effective_filter_size - 1), stride);
+}
 
-// Helper function to get the TRT datatype given an ONNX datatype
-const char* getDtypeName(int32_t onnxDtype);
+// Helper function to help extract the index of a potential -1 dimension in the reshape node
+inline Status get_infer_dim(int& infer_dim, nvinfer1::Dims const& new_shape) {
+  for (int i = 0; i < new_shape.nbDims; ++i) 
+  {
+    if (new_shape.d[i] < 0) 
+    {
+      // -1 bears special meaning, which means the current dimension can
+      // be inferred while keepin the total number of elements the same.
+      // https://github.com/onnx/onnx/blob/9b9f595107e3fc0295d50f6294d43879df17552f/onnx/defs/tensor/defs.cc#L73-L75
+      ASSERT(new_shape.d[i] == -1, ErrorCode::kUNSUPPORTED_NODE);
+      // We can only one dimension that has -1
+      ASSERT(infer_dim == -1, ErrorCode::kUNSUPPORTED_NODE);
+      infer_dim = i;
+    }
+  }
+  return Status::success();
+}
 
-// Helper function to get kernel attributes for various ONNX nodes
-void getKernelParams(IImporterContext* ctx, ::ONNX_NAMESPACE::NodeProto const& onnx_node, nvinfer1::Dims* kernel_size,
-    nvinfer1::Dims* strides, nvinfer1::Dims* beg_padding, nvinfer1::Dims* end_padding,
-    nvinfer1::PaddingMode& paddingMode, bool& count_exclude_padding, nvinfer1::Dims* dilations = nullptr,
-    nvinfer1::Dims* output_padding = nullptr, const bool poolingCeilMode = false);
+void get_kernel_params(::ONNX_NAMESPACE::NodeProto const& onnx_node,
+                       nvinfer1::Dims* kernel_size,
+                       nvinfer1::Dims* strides,
+                       nvinfer1::Dims* beg_padding,
+                       nvinfer1::Dims* end_padding,
+                       nvinfer1::PaddingMode& paddingMode,
+                       nvinfer1::Dims* dilations=nullptr);
 
-// Helper function to get the scaling mode for TRT's scale layer
-nvinfer1::ScaleMode getScaleMode(nvinfer1::Dims const& weights_shape, nvinfer1::Dims const& tensor_shape);
-
-// Helper function to map ONNX Global Pooling ops into TensorRT.
-nvinfer1::ITensor* globalPoolingHelper(IImporterContext* ctx, nvinfer1::ITensor& tensor, nvinfer1::ReduceOperation op);
-
-// Helper function to get a plugin from the PluginRegistry
-nvinfer1::IPluginV2* importPluginFromRegistry(IImporterContext* ctx, const std::string& pluginName,
-    const std::string& pluginVersion, const std::string& nodeName,
-    const std::vector<nvinfer1::PluginField>& pluginFields, const std::string& namespaceName = "ONNXTRT_NAMESPACE");
-
-// Helper function to determine if a shape contains dynamic dimensions
-bool isDynamic(const nvinfer1::Dims& shape);
-
-// Helper function to determine if a ONNX tensor is empty
-bool isOnnxTensorEmpty(const ::ONNX_NAMESPACE::TensorProto& onnxTensor);
-
-// Helper function to determine if a transpose is required
-bool isTransposeRequired(nvinfer1::Dims const& shape, nvinfer1::Permutation const& perm);
-
-// Helper function to import LSTM ops through the legacy CUDNN path
-NodeImportResult lstmLegacyImporter(
-    IImporterContext* ctx, ::ONNX_NAMESPACE::NodeProto const& node, std::vector<TensorOrWeights>& inputs);
-
-// Helper function to create and fill a Dims object with defined values
-nvinfer1::Dims makeDims(int nbDims, int val);
-
-// Helper function to map various ONNX pooling ops into TensorRT.
-NodeImportResult poolingHelper(IImporterContext* ctx, ::ONNX_NAMESPACE::NodeProto const& node,
-    std::vector<TensorOrWeights>& inputs, nvinfer1::PoolingType type);
-
-// Helper function to import reduce ops into TRT
-NodeImportResult reduceTensor(IImporterContext* ctx, ::ONNX_NAMESPACE::NodeProto const& node, TensorOrWeights input,
-    nvinfer1::ReduceOperation operation);
-
-// Helper function to shape a Tensor given a new shape
-nvinfer1::ITensor* reshapeTensor(IImporterContext* ctx, nvinfer1::ITensor& tensor, nvinfer1::Dims shape);
-
-// Helper function to map attributes to a TRT scale layer
-NodeImportResult scaleHelper(IImporterContext* ctx, nvinfer1::ITensor& tensor_, nvinfer1::ScaleMode mode,
-    nvinfer1::Weights shift, nvinfer1::Weights scale, nvinfer1::Weights power);
-
-// Helper function to set an ONNX attribute
-void setAttr(
-    nvinfer1::Dims* trtAttr, ::ONNX_NAMESPACE::AttributeProto const* onnxAttr, int nbSpatialDims, int defaultVal);
-
-// Helper function to squeeze a tensor on a given set of axes
-nvinfer1::ITensor* squeezeTensor(IImporterContext* ctx, nvinfer1::ITensor& tensor, const std::vector<int>& axes);
-
-// Helper function to transpose a tensor given a permutation
-nvinfer1::ITensor* transposeTensor(
-    IImporterContext* ctx, nvinfer1::ITensor& tensor, nvinfer1::Permutation const& perm, bool permute_dim_types = true);
-
-// Helper function to import ONNX unary ops into TRT
-NodeImportResult unaryHelper(IImporterContext* ctx, TensorOrWeights& input, nvinfer1::UnaryOperation op);
-
-// Helper function to unsqueeze tensors on a given set of axes
-nvinfer1::ITensor* unsqueezeTensor(IImporterContext* ctx, nvinfer1::ITensor& tensor, const std::vector<int>& axes);
-
-// Helper function to convert a ShapedWeights object into a vector
-Status weightsToVector(TensorOrWeights weights, std::vector<int64_t>* weightVector);
+inline nvinfer1::ScaleMode get_scale_mode(nvinfer1::Dims const& weights_shape,
+                                          nvinfer1::Dims const& tensor_shape) 
+{
+  if (weights_shape.nbDims == 1)
+  {
+    if (weights_shape.d[0] == 1)
+    {
+      return nvinfer1::ScaleMode::kUNIFORM;
+    } 
+    // Check for channel wide scale - assume tensor shape is CHW.
+    else if (weights_shape.d[0] == tensor_shape.d[0])
+    {
+      return nvinfer1::ScaleMode::kCHANNEL;
+    }
+  } 
+  return nvinfer1::ScaleMode::kELEMENTWISE;
+}
 
 } // namespace onnx2trt

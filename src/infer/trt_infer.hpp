@@ -9,8 +9,6 @@
 #include <map>
 #include <opencv2/opencv.hpp>
 
-#define HAS_PLUGIN
-
 class __half;
 struct CUstream_st;
 

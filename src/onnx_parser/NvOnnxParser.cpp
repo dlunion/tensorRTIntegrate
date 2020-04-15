@@ -23,14 +23,12 @@
 #include "NvOnnxParser.h"
 #include "ModelImporter.hpp"
 
-extern "C" void* createNvOnnxParser_INTERNAL(void* network_, void* logger_, int version, std::vector<nvinfer1::Dims4> inputDims)
-{
-    auto network = static_cast<nvinfer1::INetworkDefinition*>(network_);
-    auto logger = static_cast<nvinfer1::ILogger*>(logger_);
-    return new onnx2trt::ModelImporter(network, logger, inputDims);
+void* createNvOnnxParser_INTERNAL(void* network_, void* logger_, int version, std::vector<nvinfer1::Dims> inputDims) {
+  auto network = static_cast<nvinfer1::INetworkDefinition*>(network_);
+  auto logger  = static_cast<nvinfer1::ILogger*>(logger_);
+  return new onnx2trt::ModelImporter(network, logger, inputDims);
 }
 
-extern "C" int getNvOnnxParserVersion()
-{
-    return NV_ONNX_PARSER_VERSION;
+int getNvOnnxParserVersion() {
+  return NV_ONNX_PARSER_VERSION;
 }

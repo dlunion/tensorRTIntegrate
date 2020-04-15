@@ -22,28 +22,30 @@
 
 #pragma once
 
-#include <NvInfer.h>
 #include <onnx/onnx_pb.h>
+#include <NvInfer.h>
 
-namespace onnx2trt
-{
+namespace onnx2trt {
 
-class ShapedWeights
-{
+class ShapedWeights {
 public:
-    using DataType = int32_t;
-    DataType type;
-    void* values;
-    nvinfer1::Dims shape;
-    static ShapedWeights empty(DataType type);
-    ShapedWeights();
-    explicit ShapedWeights(DataType type, void* values, nvinfer1::Dims shape_);
-    size_t count() const;
-    size_t size_bytes() const;
-    explicit operator bool() const;
-    operator nvinfer1::Weights() const;
+  typedef int32_t DataType;
+  DataType type;
+  void* values;
+  nvinfer1::Dims shape;
+  static ShapedWeights empty(DataType type);
+  ShapedWeights();
+  explicit ShapedWeights(DataType type, void* values, nvinfer1::Dims shape_);
+  size_t count() const;
+  size_t size_bytes() const;
+  operator bool() const;
+  operator nvinfer1::Weights() const;
 };
 
-bool transposeWeights(ShapedWeights const& weights, nvinfer1::Permutation const& perm, ShapedWeights* result);
+bool transposeWeights(ShapedWeights const& weights,
+                      nvinfer1::Permutation const& perm,
+                      ShapedWeights* result);
+
+bool convertINT64(void * weightValues, const size_t nbWeights, std::vector<int32_t>& converted_weights);
 
 } // namespace onnx2trt
