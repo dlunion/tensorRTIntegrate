@@ -603,7 +603,7 @@ namespace TRTInfer {
 			//auto dtType = context->engine_->getBindingDataType(i);
 			Assert(dims.nbDims <= 4);
 
-			int offset = dims.nbDims == 3 ? 1 : 0;
+			int offset = dims.nbDims == 4 ? 0 : 1;
 			int newDims[] = {1, 1, 1, 1};
 
 			memcpy(newDims + offset, dims.d, sizeof(int) * dims.nbDims);

@@ -1,0 +1,107 @@
+W[2020-04-17 16:29:52:g:\code\tensorrt\tensorrtintegrate\src\examples\onnx.cpp:19]:onnx to trtmodel...
+W[2020-04-17 16:29:52:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:96]:Build FP32 trtmodel.
+I[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:200]:input shape: 3 x 64 x 64
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:201]:Set max batch size: 4
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:206]:Build engine
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:29:53:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution W[2020-04-17 16:32:16:g:\code\tensorrt\tensorrtintegrate\src\examples\onnx.cpp:19]:onnx to trtmodel...
+W[2020-04-17 16:32:16:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:96]:Build FP32 trtmodel.
+I[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:200]:input shape: 3 x 64 x 64
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:201]:Set max batch size: 4
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:206]:Build engine
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with same pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution with caffe pad mode
+W[2020-04-17 16:32:17:g:\code\tensorrt\tensorrtintegrate\src\builder\trt_builder.cpp:35]:NVInfer WARNING: Can't fuse pad and convolution 
