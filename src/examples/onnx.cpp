@@ -17,19 +17,12 @@ namespace examples {
 		}
 
 		INFOW("onnx to trtmodel...");
-		/*TRTBuilder::compileTRT(
+		TRTBuilder::compileTRT(
 			TRTBuilder::TRTMode_FP32, {}, 4,
 			TRTBuilder::ModelSource("models/demo.onnx"),
 			"models/demo.fp32.trtmodel", 
 			{TRTBuilder::InputDims(3, 5, 5), TRTBuilder::InputDims(3, 5, 5)}
-		);*/
-
-		/*TRTBuilder::compileTRT(
-			TRTBuilder::TRTMode_FP32, {}, 4,
-			TRTBuilder::ModelSource("models/lab_direction.onnx"),
-			"models/demo.fp32.trtmodel",
-			{TRTBuilder::InputDims(3, 64, 64)}
-		);*/
+		);
 		INFO("done.");
 
 		INFO("load model: models/demo.fp32.trtmodel");
@@ -42,6 +35,7 @@ namespace examples {
 		INFO("forward...");
 
 		engine->input(0)->setTo(0.25);
+		engine->input(1)->setTo(0);
 		engine->forward();
 		auto output = engine->output(0);
 		output->print();
