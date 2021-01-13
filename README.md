@@ -75,7 +75,7 @@ engine->tensor("hm")->cpu<float>();
 * cuda10.0
 * protobuf v3.8.x
 * Visual Studio 2017
-* [lean-windows.zip (include tensorRT、opencv、cudnn、cuda、protobuf)](http://zifuture.com:1000/fs/25.shared/lean.zip)
+* [lean-windows.zip (include tensorRT、opencv、cudnn、cuda、protobuf)](http://zifuture.com:1556/fs/25.shared/lean.zip)
 
 <br/>
 
