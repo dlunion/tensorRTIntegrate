@@ -1,5 +1,5 @@
 # YoloV5 Support
-http://zifuture.com:1000/fs/16.std/release_tensorRT_yolov5.zip
+http://zifuture.com:1556/fs/16.std/release_tensorRT_yolov5.zip
 
 
 # TensorRT-Integrate
