@@ -1,3 +1,13 @@
+# 这个版本已经废弃，最新版本，请移步
+- https://github.com/shouxieai/tensorRT_cpp
+- 新版本支持了最新版的tensorRT、yolov5，替换了新的解析器，模型编译报错更少
+
+
+
+
+
+
+
 # YoloV5 Support
 http://zifuture.com:1556/fs/16.std/release_tensorRT_yolov5.zip
 
